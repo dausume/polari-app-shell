@@ -14,6 +14,17 @@ dependencies {
     implementation(libs.jcefmaven)
 }
 
+// The store's tarball overlay drops the registration document at
+// repo-root config/polari-shell.json; baking it onto the classpath
+// is what makes a store download launch pre-registered (precedence
+// slot 3). Absent file = nothing baked — the generic-shell path.
+tasks.processResources {
+    from(rootProject.file("config")) {
+        include("polari-shell.json")
+        into("config")
+    }
+}
+
 javafx {
     version = libs.versions.javafx.get()
     modules = listOf("javafx.controls", "javafx.swing")
