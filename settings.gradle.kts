@@ -3,10 +3,19 @@
 // Android WebView / iOS WKWebView on mobile, one JSON bridge).
 rootProject.name = "polari-app-shell"
 
+pluginManagement {
+    repositories {
+        google()          // AGP
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 dependencyResolutionManagement {
     repositoriesMode.set(
         RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
+        google()          // androidx
         mavenCentral()
         // jogamp transitive natives for jcefmaven
         maven("https://jogamp.org/deployment/maven")

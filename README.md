@@ -11,11 +11,18 @@ One Gradle repo, platform modules (the committed matrix):
 
 | module | status | browser |
 |---|---|---|
-| `:core` | phase 1 ✅ | — (shared plumbing, unit-tested) |
-| `:desktop` | phase 1 ✅ Linux x64 | JavaFX chrome + JCEF |
-| `:android` | phase 3 (conditional include) | WebView + Custom Tabs |
-| `ios/` | phase 4 (plain Xcode project, shares contracts only) | WKWebView |
+| `:core` | ✅ | — (shared plumbing, unit-tested) |
+| `:desktop` | ✅ Linux x64 | JavaFX chrome + JCEF |
+| `:android` phone flavor | ✅ APK builds | embedded WebView (pinned CA, API 29+ for self-signed) |
+| `:android` vr flavor | ✅ APK builds (Quest 2 / Vive) | **Wolvic, required** — the WebXR browser; shell registers/probes, Wolvic renders |
+| `ios/` | sources complete, **needs a Mac** (XcodeGen) | WKWebView |
 | PinePhone | phase 5 | JCEF if stable, else Chromium `--app` mode |
+
+`:android` only loads when an SDK is present (`local.properties` /
+`ANDROID_HOME`): `./gradlew :android:assemblePhoneDebug
+:android:assembleVrDebug`. Store APKs ship config-free — enrollment
+is deep-link/QR (`polari://register?...`), the manifest owns the
+scheme.
 
 ## Build & run
 

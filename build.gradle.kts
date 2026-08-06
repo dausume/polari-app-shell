@@ -10,14 +10,16 @@ plugins {
 subprojects {
     plugins.withType<JavaPlugin> {
         extensions.configure<JavaPluginExtension> {
-            // Any JDK >= 21 builds this (Java 22 on the dev box);
-            // release=21 keeps end-user tarball builds honest about
-            // the floor without forcing a toolchain download.
-            sourceCompatibility = JavaVersion.VERSION_21
-            targetCompatibility = JavaVersion.VERSION_21
+            // Java 17 bytecode floor: everything :core needs
+            // (records, switch expressions, java.net.http) is 17-
+            // clean, and 17 is what the Android toolchain (D8/AGP)
+            // consumes without ceremony — :android reuses :core
+            // directly. Any JDK >= 17 builds the tarball.
+            sourceCompatibility = JavaVersion.VERSION_17
+            targetCompatibility = JavaVersion.VERSION_17
         }
         tasks.withType<JavaCompile>().configureEach {
-            options.release.set(21)
+            options.release.set(17)
             options.encoding = "UTF-8"
         }
         tasks.withType<Test>().configureEach {

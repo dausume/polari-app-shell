@@ -1,0 +1,31 @@
+# XcodeGen spec — `xcodegen generate` on a Mac produces
+# PolariShell.xcodeproj. Kept as data so the project file never
+# rots in git.
+name: PolariShell
+options:
+  bundleIdPrefix: org.polari
+  deploymentTarget:
+    iOS: "15.0"
+targets:
+  PolariShell:
+    type: application
+    platform: iOS
+    sources: [PolariShell]
+    info:
+      path: PolariShell/Info.plist
+      properties:
+        CFBundleDisplayName: Polari
+        UILaunchScreen: {}
+        CFBundleURLTypes:
+          - CFBundleURLSchemes: [polari]
+            CFBundleURLName: org.polari.shell
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.polari.shell.ios
+        SWIFT_VERSION: "5.9"
+  PolariShellTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [PolariShellTests]
+    dependencies:
+      - target: PolariShell

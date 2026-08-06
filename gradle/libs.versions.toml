@@ -5,6 +5,7 @@
 # so bump it deliberately, never casually.
 
 [versions]
+agp = "8.7.3"
 gson = "2.11.0"
 javafx = "21.0.7"
 javafxplugin = "0.1.0"
@@ -19,4 +20,5 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
 [plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
 javafx = { id = "org.openjfx.javafxplugin", version.ref = "javafxplugin" }
