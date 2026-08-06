@@ -1,0 +1,24 @@
+<!-- Shell-local advisory page: shown INSTEAD of the web app when the
+     instance is unreachable. Loaded via data: URL with {{TOKENS}}
+     substituted by the shell. Advises, never blocks. -->
+<!doctype html>
+<meta charset="utf-8">
+<title>{{TITLE}}</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; display: grid;
+         place-items: center; min-height: 90vh; margin: 0; }
+  main { max-width: 34rem; padding: 2rem; }
+  h1 { font-size: 1.2rem; }
+  p.evidence { opacity: .75; font-size: .9rem; }
+  .state { display: inline-block; padding: .15rem .6rem;
+           border-radius: 1rem; background: #b95000; color: #fff;
+           font-size: .8rem; margin-bottom: .8rem; }
+</style>
+<main>
+  <span class="state">{{STATE}}</span>
+  <h1>{{HEADLINE}}</h1>
+  <p class="evidence">{{EVIDENCE}}</p>
+  <p>You can retry from the shell toolbar, open anyway, or switch
+     to another registered instance.</p>
+</main>

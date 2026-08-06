@@ -1,0 +1,11 @@
+# x-scheme-handler registration template — installed by the packaged
+# builds (phase 2) so polari:// links open the running shell.
+# Phase-1 fallback: pass links as  --deeplink 'polari://register?...'
+[Desktop Entry]
+Type=Application
+Name=Polari
+Comment=Polari app shell
+Exec=polari-shell --deeplink %u
+Terminal=false
+Categories=Network;
+MimeType=x-scheme-handler/polari;

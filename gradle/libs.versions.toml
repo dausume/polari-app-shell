@@ -1,0 +1,22 @@
+# Single version catalog for every module.
+# jcefmaven pins BOTH the JCEF API and the CEF natives it fetches at
+# first run — upgrading it can change CEF's command-line switches
+# (the third-party-cookie flags the phase-1 auth strategy relies on),
+# so bump it deliberately, never casually.
+
+[versions]
+gson = "2.11.0"
+javafx = "21.0.7"
+javafxplugin = "0.1.0"
+jcefmaven = "135.0.20"
+junit = "5.11.4"
+
+[libraries]
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+jcefmaven = { module = "me.friwi:jcefmaven", version.ref = "jcefmaven" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+[plugins]
+javafx = { id = "org.openjfx.javafxplugin", version.ref = "javafxplugin" }

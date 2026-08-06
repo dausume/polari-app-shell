@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://polari.dev/schemas/polari-shell-registration-1.json",
+  "title": "Polari shell registration document v1 (plan S1)",
+  "description": "The one document every delivery path carries: baked into store tarballs as config/polari-shell.json, served by /api/appstore/{shell}/registration, returned by /api/appstore/enroll/redeem. Canonical copy — the backend (appstore.appstore_payloads) emits exactly this shape. Credential-free except the single-use enrollment token.",
+  "type": "object",
+  "required": ["kind", "schemaVersion", "app", "instances"],
+  "properties": {
+    "kind": { "const": "polari-shell-registration" },
+    "schemaVersion": { "const": 1 },
+    "app": {
+      "type": "object",
+      "required": ["name", "scope"],
+      "properties": {
+        "name": { "type": "string" },
+        "title": { "type": "string" },
+        "scope": { "enum": ["instance", "app"] },
+        "appName": { "type": "string", "description": "PolariAppDefinition.name when scope=app" },
+        "startRoute": { "type": "string" },
+        "brandColor": { "type": "string" },
+        "icon": { "type": "string", "description": "base64 PNG, optional" }
+      }
+    },
+    "instances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "webUrl", "apiUrl"],
+        "properties": {
+          "id": { "type": "string" },
+          "displayName": { "type": "string" },
+          "webUrl": { "type": "string" },
+          "apiUrl": { "type": "string" },
+          "identityUrl": { "type": "string" },
+          "instanceId": { "type": "string" },
+          "auth": {
+            "type": "object",
+            "properties": {
+              "authority": { "type": "string" },
+              "realm": { "type": "string" },
+              "clientId": { "type": "string" },
+              "pkce": { "const": "S256" },
+              "scope": { "type": "string" },
+              "shellRedirectUri": { "type": "string" },
+              "loginHint": { "type": "string" }
+            }
+          },
+          "tls": {
+            "type": "object",
+            "properties": {
+              "caPem": { "type": "array", "items": { "type": "string" } },
+              "caSha256": { "type": "string", "description": "sha256 hex of the CA PEM bytes — the deep-link TOFU pin" }
+            }
+          },
+          "reachability": {
+            "type": "object",
+            "properties": {
+              "scope": { "enum": ["local", "web", "mesh"], "description": "mesh is a named placeholder — shells treat it as web" },
+              "networkKind": { "enum": ["", "home", "business", "other"] },
+              "networkName": { "type": "string" },
+              "hint": {
+                "type": "object",
+                "properties": {
+                  "cidrs": { "type": "array", "items": { "type": "string" }, "description": "ADVISORY only — RFC1918 collides across NATs; the probeUrl is authoritative" },
+                  "probeUrl": { "type": "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "enrollment": {
+      "type": ["object", "null"],
+      "properties": {
+        "token": { "type": "string", "description": "'enr-<id>.<secret>' — single-use, hashed at rest server-side" },
+        "redeemUrl": { "type": "string" },
+        "expiresAt": { "type": "string" }
+      }
+    }
+  }
+}

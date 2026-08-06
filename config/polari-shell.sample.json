@@ -1,0 +1,50 @@
+{
+  "kind": "polari-shell-registration",
+  "schemaVersion": 1,
+  "app": {
+    "name": "polari-instance-shell",
+    "title": "Polari",
+    "scope": "instance",
+    "appName": "",
+    "startRoute": "",
+    "brandColor": "",
+    "icon": ""
+  },
+  "instances": [
+    {
+      "id": "prf-a",
+      "displayName": "Polari (staging)",
+      "webUrl": "https://prf.192.168.0.210.nip.io",
+      "apiUrl": "https://api.prf.192.168.0.210.nip.io",
+      "identityUrl": "https://api.prf.192.168.0.210.nip.io/api/appstore/identity",
+      "instanceId": "a",
+      "auth": {
+        "authority": "https://auth.192.168.0.210.nip.io/realms/Polari",
+        "realm": "Polari",
+        "clientId": "polari-shell",
+        "pkce": "S256",
+        "scope": "openid profile email roles offline_access",
+        "shellRedirectUri": "polari://oauth/callback",
+        "loginHint": ""
+      },
+      "tls": {
+        "caPem": ["-----BEGIN CERTIFICATE-----\n...suite root CA...\n-----END CERTIFICATE-----\n"],
+        "caSha256": "<sha256 hex of the PEM bytes>"
+      },
+      "reachability": {
+        "scope": "local",
+        "networkKind": "home",
+        "networkName": "Etts home network",
+        "hint": {
+          "cidrs": ["192.168.0.0/24"],
+          "probeUrl": "https://api.prf.192.168.0.210.nip.io/api/appstore/identity"
+        }
+      }
+    }
+  ],
+  "enrollment": {
+    "token": "enr-000000000000.sample-not-a-real-token",
+    "redeemUrl": "https://api.prf.192.168.0.210.nip.io/api/appstore/enroll/redeem",
+    "expiresAt": "2026-01-01T00:00:00+00:00"
+  }
+}
