@@ -4,3 +4,4 @@ local.properties
 *.class
 .idea/
 .vscode/
+config/polari-shell.local.json
