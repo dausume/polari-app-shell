@@ -232,6 +232,43 @@ final class ShellFrame {
             }
             return o;
         });
+        // §31: the native store install. The page asks to install a
+        // NAMED catalog app; HostInstall validates the name and
+        // builds a FIXED pkexec argv (polkit prompts for the
+        // password). A hostile page can inject nothing — only a
+        // name, matched against a strict allowlist.
+        bridge.on("store.install", p -> {
+            JsonObject o = new JsonObject();
+            String name = p.has("name")
+                    ? p.get("name").getAsString() : "";
+            if (!org.polari.shell.core.host.HostInstall
+                    .validName(name)) {
+                o.addProperty("ok", false);
+                o.addProperty("error",
+                        "refused: not an installable name");
+                return o;
+            }
+            try {
+                var cmd = org.polari.shell.core.host.HostInstall
+                        .installCommand(name);
+                HostProcess.Result r =
+                        HostProcess.run(cmd, 600);
+                o.addProperty("ok", r.exitCode == 0);
+                o.addProperty("exitCode", r.exitCode);
+                o.addProperty("output", r.output);
+            } catch (Exception e) {
+                o.addProperty("ok", false);
+                o.addProperty("error", e.toString());
+            }
+            return o;
+        });
+        bridge.on("store.available", p -> {
+            // lets the page know a native install path exists here
+            JsonObject o = new JsonObject();
+            o.addProperty("available", true);
+            o.addProperty("mechanism", "pkexec");
+            return o;
+        });
         return bridge;
     }
 
