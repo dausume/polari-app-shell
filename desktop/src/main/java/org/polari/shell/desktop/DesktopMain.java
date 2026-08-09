@@ -41,14 +41,23 @@ public final class DesktopMain {
                 InstanceRegistry.defaultFile());
         registry.load();
 
-        // 1-3. Config discovery + add-only merge.
+        // 1-3. Config discovery + add-only merge. A launcher's own
+        // config (explicit --config OR a sidecar next to it) names
+        // the instance THIS launcher should open — so each app deb
+        // opens ITS app, never whatever the shared registry last
+        // used (fixes the store opening prf-a).
         Path launcherDir = Paths.get(
                 System.getProperty("app.home",
                         System.getProperty("user.dir")));
-        ConfigLoader.load(explicit, launcherDir).ifPresent(cfg ->
-                report("config",
-                        registry.merge(cfg, explicit != null
-                                ? "arg" : "baked/sidecar"), cfg));
+        final String[] preferredId = {null};
+        ConfigLoader.load(explicit, launcherDir).ifPresent(cfg -> {
+            report("config",
+                    registry.merge(cfg, explicit != null
+                            ? "arg" : "baked/sidecar"), cfg);
+            if (!cfg.instances.isEmpty()) {
+                preferredId[0] = cfg.instances.get(0).id;
+            }
+        });
 
         // 4. Deep link (may add another instance or carry a token).
         deeplink.flatMap(DeepLink::parse)
@@ -71,9 +80,13 @@ public final class DesktopMain {
             System.exit(2);
         }
 
-        String id = registry.lastUsedId().isBlank()
-                ? registry.all().get(0).config.id
-                : registry.lastUsedId();
+        // This launcher's own instance wins; else last-used; else
+        // the first registered.
+        String id = preferredId[0] != null
+                ? preferredId[0]
+                : (registry.lastUsedId().isBlank()
+                        ? registry.all().get(0).config.id
+                        : registry.lastUsedId());
         RegisteredInstance inst = registry.get(id)
                 .orElse(registry.all().get(0));
         registry.markUsed(inst.config.id);
