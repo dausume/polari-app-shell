@@ -61,6 +61,7 @@ final class ShellFrame {
         frame.setLayout(new BorderLayout());
         frame.setSize(1280, 860);
         frame.setTitle(title());
+        applyLauncherIcon();
 
         JFXPanel chrome = new JFXPanel();
         frame.add(chrome, BorderLayout.NORTH);
@@ -68,6 +69,29 @@ final class ShellFrame {
 
         attachBrowser();
         frame.setVisible(true);
+    }
+
+    /** The window wears its LAUNCHER's icon (the installed hicolor
+     *  PNG named by the wmclass DesktopMain resolved) — same face
+     *  open as in the menu. Best-effort. */
+    private void applyLauncherIcon() {
+        String pkg = System.getProperty(
+                "polari.shell.wmclass", "");
+        if (pkg.isBlank()) {
+            return;
+        }
+        java.io.File png = new java.io.File(
+                "/usr/share/icons/hicolor/256x256/apps/"
+                + pkg + ".png");
+        if (!png.isFile()) {
+            return;
+        }
+        try {
+            frame.setIconImage(
+                    javax.imageio.ImageIO.read(png));
+        } catch (Exception ignored) {
+            // generic icon is the honest fallback
+        }
     }
 
     private String title() {

@@ -50,6 +50,7 @@ public final class DesktopMain {
                 System.getProperty("app.home",
                         System.getProperty("user.dir")));
         final String[] preferredId = {null};
+        final String[] appName = {""};
         ConfigLoader.load(explicit, launcherDir).ifPresent(cfg -> {
             report("config",
                     registry.merge(cfg, explicit != null
@@ -57,7 +58,15 @@ public final class DesktopMain {
             if (!cfg.instances.isEmpty()) {
                 preferredId[0] = cfg.instances.get(0).id;
             }
+            appName[0] = cfg.app.name == null ? "" : cfg.app.name;
         });
+
+        // The RUNNING window must wear the same identity as its
+        // launcher: X11 WM_CLASS defaults to the shared main class
+        // (org-polari-shell-desktop-DesktopMain), so GNOME shows a
+        // generic Java icon for every app. Match the launcher deb's
+        // StartupWMClass (= its package name) instead.
+        applyWindowClass(launcherPackageName(appName[0]));
 
         // 4. Deep link (may add another instance or carry a token).
         deeplink.flatMap(DeepLink::parse)
@@ -111,6 +120,41 @@ public final class DesktopMain {
         List<RegisteredInstance> all = registry.all();
         SwingUtilities.invokeLater(() -> new ShellFrame(
                 registry, inst, probe, all).open());
+    }
+
+    /** The launcher deb's package name for an app ('polari' →
+     *  'isle-app-polari'; the store's config already carries
+     *  'isle-app-store'). '' when no config named an app. */
+    static String launcherPackageName(String appName) {
+        if (appName == null || appName.isBlank()) {
+            return "";
+        }
+        String n = appName.toLowerCase()
+                .replaceAll("[^a-z0-9.-]", "-");
+        return n.contains("-app-") || n.startsWith("isle-app")
+                ? n : "isle-app-" + n;
+    }
+
+    /** Set X11 WM_CLASS to the launcher package (the classic AWT
+     *  awtAppClassName field — read at first window creation) and
+     *  remember it for the frame icon. Best-effort: on failure the
+     *  window keeps the generic identity. */
+    private static void applyWindowClass(String wmClass) {
+        if (wmClass.isBlank()) {
+            return;
+        }
+        System.setProperty("polari.shell.wmclass", wmClass);
+        try {
+            java.awt.Toolkit tk =
+                    java.awt.Toolkit.getDefaultToolkit();
+            java.lang.reflect.Field f = tk.getClass()
+                    .getDeclaredField("awtAppClassName");
+            f.setAccessible(true);
+            f.set(tk, wmClass);
+        } catch (Exception e) {
+            System.err.println("[shell] WM_CLASS not set (" + e
+                    + ") — dock icon may be generic");
+        }
     }
 
     static void redeemIfPending(InstanceRegistry registry,
