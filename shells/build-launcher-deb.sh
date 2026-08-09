@@ -85,7 +85,7 @@ doc = {
         "reachability": {"scope": "mesh", "networkKind": "",
                          "networkName": "isle mesh",
                          "hint": {"cidrs": [],
-                                  "probeUrl": ""}},
+                                  "probeUrl": url}},
     }],
     "enrollment": None,
 }

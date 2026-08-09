@@ -72,7 +72,7 @@ print(json.dumps({
         "tls": {"caPem": ca_pem, "caSha256": ""},
         "reachability": {"scope": "mesh", "networkKind": "",
                          "networkName": "isle mesh",
-                         "hint": {"cidrs": [], "probeUrl": ""}},
+                         "hint": {"cidrs": [], "probeUrl": url}},
     }], "enrollment": None}, indent=2))
 PYEOF
 [ -n "$CA_ARG" ] && [ -f "$CA_ARG" ] && cp "$CA_ARG" "$STAGE$SHARE/isle-root.crt"
