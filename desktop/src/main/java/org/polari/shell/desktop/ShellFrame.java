@@ -269,6 +269,35 @@ final class ShellFrame {
             o.addProperty("mechanism", "pkexec");
             return o;
         });
+        // read-only installed-version query for one app's native
+        // launcher (dpkg, unprivileged, same name allowlist) — the
+        // store page shows "installed on this device vX"
+        bridge.on("store.status", p -> {
+            JsonObject o = new JsonObject();
+            String name = p.has("name")
+                    ? p.get("name").getAsString() : "";
+            if (!org.polari.shell.core.host.HostInstall
+                    .validName(name)) {
+                o.addProperty("ok", false);
+                o.addProperty("error",
+                        "refused: not an installable name");
+                return o;
+            }
+            try {
+                HostProcess.Result r = HostProcess.run(
+                        org.polari.shell.core.host.HostInstall
+                                .installedVersionCommand(name), 10);
+                o.addProperty("ok", true);
+                o.addProperty("installed", r.exitCode == 0
+                        && !r.output.isBlank());
+                o.addProperty("version", r.exitCode == 0
+                        ? r.output.trim() : "");
+            } catch (Exception e) {
+                o.addProperty("ok", false);
+                o.addProperty("error", e.toString());
+            }
+            return o;
+        });
         return bridge;
     }
 

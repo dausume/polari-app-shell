@@ -43,4 +43,21 @@ class HostInstallTest {
         assertThrows(IllegalArgumentException.class,
                 () -> HostInstall.installCommand("; reboot"));
     }
+
+    @Test
+    void installedVersionIsFixedReadOnlyArgv() {
+        List<String> cmd =
+                HostInstall.installedVersionCommand("polari");
+        assertEquals(List.of("dpkg-query", "-W", "-f",
+                "${Version}", "isle-app-polari"), cmd);
+        // never privileged
+        assertFalse(cmd.contains("pkexec"));
+    }
+
+    @Test
+    void installedVersionRejectsBadNames() {
+        assertThrows(IllegalArgumentException.class,
+                () -> HostInstall.installedVersionCommand(
+                        "$(id)"));
+    }
 }

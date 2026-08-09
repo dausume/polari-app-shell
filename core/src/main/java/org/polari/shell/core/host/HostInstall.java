@@ -51,4 +51,22 @@ public final class HostInstall {
     public static List<String> statusCommand() {
         return List.of("isle", "store", "list");
     }
+
+    /**
+     * Non-privileged installed-version query for ONE app's native
+     * launcher: `dpkg-query -W -f ${Version} isle-app-<name>`.
+     * Read-only, fixed argv, same allowlisted name — exit 0 with a
+     * version on stdout means "installed on this device".
+     *
+     * @throws IllegalArgumentException if the name is not allowlisted
+     */
+    public static List<String> installedVersionCommand(String name) {
+        if (!validName(name)) {
+            throw new IllegalArgumentException(
+                    "refused: not an installable catalog name: "
+                    + name);
+        }
+        return List.of("dpkg-query", "-W", "-f", "${Version}",
+                "isle-app-" + name);
+    }
 }
