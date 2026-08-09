@@ -31,7 +31,18 @@ PKG="isle-app-store"
 SHARE="/usr/share/$PKG"
 STAGE="$ROOT/build/store-deb"
 rm -rf "$STAGE"; mkdir -p "$STAGE/DEBIAN" "$STAGE$SHARE" \
-    "$STAGE/usr/share/applications" "$OUTPUT"
+    "$STAGE/usr/share/applications" \
+    "$STAGE/usr/share/icons/hicolor/256x256/apps" "$OUTPUT"
+
+# the ISLAND mark (CC0, shells/icons) is the store's icon
+ISLAND="$ROOT/shells/icons/isle-island.png"
+if [ -f "$ISLAND" ]; then
+    cp "$ISLAND" \
+        "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"
+    STORE_ICON="$PKG"
+else
+    STORE_ICON="applications-internet"
+fi
 
 # ---- shell config (ShellConfig pointed at the tabbed hub) ----
 CA_ARG="${CA:-}"
@@ -69,7 +80,7 @@ Type=Application
 Name=Isle App Store
 Comment=Install and manage isle-mesh apps on this device
 Exec=/usr/bin/polari-app-shell --config $SHARE/polari-shell.json
-Icon=applications-internet
+Icon=$STORE_ICON
 Terminal=false
 Categories=Network;System;
 EOF

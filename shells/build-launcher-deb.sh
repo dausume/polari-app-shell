@@ -92,8 +92,11 @@ doc = {
 print(json.dumps(doc, indent=2))
 PYEOF
 
-# ---- icon ----
-if [ -n "$ICON" ] && [ -f "$ICON" ]; then
+# ---- icon: --icon wins; else the POLARI MARK is the default for
+# every isle/polari app (Dustin) ----
+DEFAULT_ICON="$ROOT/shells/icons/polari-mark.png"
+[ -n "$ICON" ] && [ -f "$ICON" ] || ICON="$DEFAULT_ICON"
+if [ -f "$ICON" ]; then
     cp "$ICON" "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"
     ICON_LINE="Icon=$PKG"
 else
