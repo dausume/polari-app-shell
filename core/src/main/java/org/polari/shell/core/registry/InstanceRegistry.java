@@ -109,6 +109,15 @@ public class InstanceRegistry {
                 conflicts.add(inst.id + ": registered "
                         + existing.config.webUrl + " vs arriving "
                         + inst.webUrl + " (" + source + ")");
+            } else {
+                // Same instance, same URL: the arriving config is a
+                // REFRESH of its own registration (a launcher's own
+                // --config/sidecar is authoritative for its
+                // instance) — update the config so field changes
+                // (identity/probe/CA) actually take, keeping the
+                // runtime state (enrolled + last probe).
+                existing.config = inst;
+                existing.source = source;
             }
         });
         return added;
