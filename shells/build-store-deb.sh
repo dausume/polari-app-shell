@@ -58,8 +58,12 @@ print(json.dumps({
     "instances": [{
         "id": "isle-store", "displayName": "Isle App Store",
         "webUrl": url, "apiUrl": url,
-        "identityUrl": url + "/api/appstore/identity",
-        "instanceId": "isle-store",
+        # blank identity/instanceId → the shell treats this as a
+        # plain mesh web view (no appstore-enrollment probe); prf-isle
+        # doesn't run the appstore module, so a strict identity check
+        # would false-flag on the SPA fallback.
+        "identityUrl": "",
+        "instanceId": "",
         "auth": {"authority": "", "realm": "Polari",
                  "clientId": "polari-shell", "pkce": "S256",
                  "scope": "openid profile email roles",
@@ -68,7 +72,7 @@ print(json.dumps({
         "tls": {"caPem": ca_pem, "caSha256": ""},
         "reachability": {"scope": "mesh", "networkKind": "",
                          "networkName": "isle mesh",
-                         "hint": {"cidrs": [], "probeUrl": url}},
+                         "hint": {"cidrs": [], "probeUrl": ""}},
     }], "enrollment": None}, indent=2))
 PYEOF
 [ -n "$CA_ARG" ] && [ -f "$CA_ARG" ] && cp "$CA_ARG" "$STAGE$SHARE/isle-root.crt"
