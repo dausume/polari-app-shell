@@ -38,7 +38,9 @@ esac; done
 
 PKG="${KIND}-app-$(printf '%s' "$NAME" | tr '[:upper:]_' '[:lower:]-' | tr -cd 'a-z0-9.-')"
 SHARE="/usr/share/$PKG"
-STAGE="$ROOT/build/launcher-$NAME"
+# staging: $ROOT/build is root-owned once the tools ship in the CLI
+# deb — POLARI_SHELL_BUILD lets the caller point at a writable dir
+STAGE="${POLARI_SHELL_BUILD:-$ROOT/build}/launcher-$NAME"
 rm -rf "$STAGE"; mkdir -p "$STAGE/DEBIAN" "$STAGE$SHARE" \
     "$STAGE/usr/share/applications" "$STAGE/usr/share/icons/hicolor/256x256/apps"
 mkdir -p "$OUTPUT"

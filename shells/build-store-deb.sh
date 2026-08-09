@@ -98,10 +98,20 @@ cat > "$STAGE/DEBIAN/postinst" <<'POSTINST'
 set -e
 echo "==> Isle App Store: making this device an isle member"
 CA=/usr/share/isle-app-store/isle-root.crt
-if command -v isle >/dev/null 2>&1; then
-    [ -f "$CA" ] && (isle trust install --yes 2>/dev/null || true)
+# apt runs us with a sanitized PATH that skips /usr/local/bin —
+# resolve the CLI symlink explicitly
+ISLE=$(command -v isle 2>/dev/null || true)
+[ -n "$ISLE" ] || { [ -x /usr/local/bin/isle ] && ISLE=/usr/local/bin/isle || true; }
+if [ -n "$ISLE" ]; then
+    if [ -f "$CA" ]; then
+        # isle trust reads /etc/isle-mesh/ca/isle-root.crt, not our
+        # share dir — seed it so the trust step actually takes (§34)
+        mkdir -p /etc/isle-mesh/ca
+        [ -f /etc/isle-mesh/ca/isle-root.crt ] || cp "$CA" /etc/isle-mesh/ca/isle-root.crt
+        "$ISLE" trust install --yes 2>/dev/null || true
+    fi
     # ensure an agent (idempotent; brings it up if absent)
-    isle agent ensure 2>/dev/null || \
+    "$ISLE" agent ensure 2>/dev/null || \
         echo "   (run 'sudo isle agent ensure' to host apps here)"
     echo "==> ready — open 'Isle App Store' from your menu"
 else
