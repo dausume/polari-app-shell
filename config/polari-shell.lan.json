@@ -1,0 +1,45 @@
+{
+  "kind": "polari-shell-registration",
+  "schemaVersion": 1,
+  "app": {
+    "name": "polari-lan",
+    "title": "Polari (home wifi)",
+    "scope": "instance",
+    "appName": "",
+    "startRoute": "/",
+    "brandColor": "#2f6f8f",
+    "icon": ""
+  },
+  "instances": [
+    {
+      "id": "prf-pol-lan",
+      "displayName": "Polari on the home wifi",
+      "webUrl": "https://prf.192.168.0.210.nip.io",
+      "apiUrl": "https://api.prf.192.168.0.210.nip.io",
+      "identityUrl": "https://auth.prf.192.168.0.210.nip.io",
+      "instanceId": "prf-pol",
+      "auth": {
+        "authority": "https://auth.prf.192.168.0.210.nip.io/realms/Polari",
+        "realm": "Polari",
+        "clientId": "polari-frontend",
+        "pkce": "S256",
+        "scope": "openid profile email roles"
+      },
+      "tls": {
+        "caPem": "-----BEGIN CERTIFICATE-----\nMIIBtjCCAV2gAwIBAgIQQG6jkSgF/fftWv60CLvT6zAKBggqhkjOPQQDAjA6MRcw\nFQYDVQQKEw5Qb2xhcmkgUm9vdCBDQTEfMB0GA1UEAxMWUG9sYXJpIFJvb3QgQ0Eg\nUm9vdCBDQTAeFw0yNjA2MjQwMTUyMDlaFw0zNjA2MjEwMTUyMDlaMDoxFzAVBgNV\nBAoTDlBvbGFyaSBSb290IENBMR8wHQYDVQQDExZQb2xhcmkgUm9vdCBDQSBSb290\nIENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6KHsGnzR2E3+4BcYrGkF0+HF\nZOmOm413e64WDJ5bNBKiXZlOB4HXWFW7gb/xfxU28Q94GqLCBOb9k/HMpQfUfaNF\nMEMwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwHQYDVR0OBBYE\nFNrCyQnaXjZmAYYxAntQK1jt2qXAMAoGCCqGSM49BAMCA0cAMEQCIAptcTE8Nvv+\nhBoSyRaB983T4vtFGkV5WGO4Cas/jmXnAiAVgjA+SMZAeq6v3jhHqYjJJcBjWx5L\nJL799clERtUoQg==\n-----END CERTIFICATE-----",
+        "caSha256": "6e7a9f337ac7cd174b52ea6eceb57c18db48ed6d2019cd083e7dae8c854caa59"
+      },
+      "reachability": {
+        "scope": "local",
+        "networkKind": "home",
+        "networkName": "home wifi",
+        "hint": {
+          "cidrs": [
+            "192.168.0.0/24"
+          ],
+          "probeUrl": "https://api.prf.192.168.0.210.nip.io/api/health"
+        }
+      }
+    }
+  ]
+}
