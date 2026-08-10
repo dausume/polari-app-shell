@@ -5,3 +5,4 @@ local.properties
 .idea/
 .vscode/
 config/polari-shell.local.json
+dist/
