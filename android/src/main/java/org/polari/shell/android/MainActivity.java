@@ -47,6 +47,8 @@ import org.polari.shell.core.registry.RegisteredInstance;
 public class MainActivity extends Activity {
 
     private InstanceRegistry registry;
+    // sep-1: the launcher's app block (scope/appName/startRoute)
+    private ShellConfig.App appBlock = new ShellConfig.App();
     private TextView status;
 
     @Override
@@ -58,8 +60,12 @@ public class MainActivity extends Activity {
 
         // 1. Baked asset config (custom builds; store APKs ship
         //    config-free and register via deep link).
-        bakedConfig().ifPresent(cfg ->
-                registry.merge(cfg, "baked"));
+        bakedConfig().ifPresent(cfg -> {
+            registry.merge(cfg, "baked");
+            // sep-1: a scope=app registration clamps this shell to
+            // one app — the URL is the channel, same rule as desktop.
+            appBlock = cfg.app;
+        });
 
         // 2. polari:// deep link (register + one-time token).
         Uri data = getIntent().getData();
@@ -146,7 +152,8 @@ public class MainActivity extends Activity {
                 new ShellBridge(this, registry, inst),
                 "PolariShellNative");
         setContentView(web);
-        web.loadUrl(inst.config.webUrl);
+        web.loadUrl(org.polari.shell.core.config.StartUrl
+                .of(inst.config.webUrl, appBlock));
     }
 
     /**
@@ -226,8 +233,11 @@ public class MainActivity extends Activity {
      *  the headset browser with real WebXR, which the suite's XR
      *  pages need. The shell stays the registrar/prober. */
     private void openInWolvic(RegisteredInstance inst) {
+        // sep-1: Wolvic gets NO bridge — the URL carrying the clamp
+        // is the only channel, which is why the URL is the channel.
         Intent intent = new Intent(Intent.ACTION_VIEW,
-                Uri.parse(inst.config.webUrl));
+                Uri.parse(org.polari.shell.core.config.StartUrl
+                        .of(inst.config.webUrl, appBlock)));
         intent.setPackage("com.igalia.wolvic");
         try {
             startActivity(intent);

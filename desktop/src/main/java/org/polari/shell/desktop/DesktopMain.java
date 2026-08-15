@@ -51,6 +51,9 @@ public final class DesktopMain {
                         System.getProperty("user.dir")));
         final String[] preferredId = {null};
         final String[] appName = {""};
+        // sep-1: the launcher's app block travels to the frame —
+        // scope/appName/startRoute shape the URL the shell opens.
+        final ShellConfig.App[] appBlock = {new ShellConfig.App()};
         ConfigLoader.load(explicit, launcherDir).ifPresent(cfg -> {
             report("config",
                     registry.merge(cfg, explicit != null
@@ -59,6 +62,7 @@ public final class DesktopMain {
                 preferredId[0] = cfg.instances.get(0).id;
             }
             appName[0] = cfg.app.name == null ? "" : cfg.app.name;
+            appBlock[0] = cfg.app;
         });
 
         // The RUNNING window must wear the same identity as its
@@ -119,7 +123,7 @@ public final class DesktopMain {
         // 7. Chrome + browser.
         List<RegisteredInstance> all = registry.all();
         SwingUtilities.invokeLater(() -> new ShellFrame(
-                registry, inst, probe, all).open());
+                registry, inst, probe, all, appBlock[0]).open());
     }
 
     /** The launcher deb's package name for an app ('polari' →

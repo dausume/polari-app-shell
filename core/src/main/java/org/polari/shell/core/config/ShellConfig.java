@@ -35,6 +35,17 @@ public class ShellConfig {
     public boolean looksValid() {
         return "polari-shell-registration".equals(kind)
                 && schemaVersion == 1 && instances != null
-                && !instances.isEmpty();
+                && !instances.isEmpty()
+                && scopeCoherent();
+    }
+
+    /** sep-1: scope/appName coherence — a scope=app registration
+     *  without an appName has nothing to clamp to and is a broken
+     *  document, not a full-Polari one. */
+    private boolean scopeCoherent() {
+        if (app == null || !"app".equals(app.scope)) {
+            return true;
+        }
+        return app.appName != null && !app.appName.isBlank();
     }
 }

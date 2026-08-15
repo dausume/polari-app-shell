@@ -18,6 +18,32 @@ struct ShellConfig: Codable {
         var startRoute = ""
         var brandColor = ""
         var icon = ""
+
+        /// sep-1 (mirror of core's StartUrl.of): a scope=app block
+        /// clamps the SPA via `?shellApp=` on the opened URL; blank
+        /// startRoute defaults to the app home. iOS installs are
+        /// config-free today so the registry carries no app block
+        /// yet — the rule lives here in lockstep for when it does.
+        func startUrl(base: String) -> String {
+            var b = base.trimmingCharacters(in: .whitespaces)
+            while b.hasSuffix("/") { b = String(b.dropLast()) }
+            var route = startRoute
+                .trimmingCharacters(in: .whitespaces)
+            let name = appName
+                .trimmingCharacters(in: .whitespaces)
+            guard scope == "app", !name.isEmpty else {
+                return route.isEmpty ? b : b + slashed(route)
+            }
+            if route.isEmpty { route = "/app/" + name }
+            let sep = route.contains("?") ? "&" : "?"
+            let enc = name.addingPercentEncoding(
+                withAllowedCharacters: .urlQueryAllowed) ?? name
+            return b + slashed(route) + sep + "shellApp=" + enc
+        }
+
+        private func slashed(_ route: String) -> String {
+            route.hasPrefix("/") ? route : "/" + route
+        }
     }
 
     struct Enrollment: Codable {
@@ -29,6 +55,8 @@ struct ShellConfig: Codable {
     var looksValid: Bool {
         kind == "polari-shell-registration" && schemaVersion == 1
             && !instances.isEmpty
+            // sep-1: scope=app without appName = broken document
+            && (app.scope != "app" || !app.appName.isEmpty)
     }
 }
 

@@ -29,7 +29,7 @@ Response: `{ "id": "<uuid>", "ok": true, "payload": {...} }`
 
 | type | payload | response payload |
 |---|---|---|
-| `shell.info` | `{}` | `{shellVersion, platform, instanceId}` — lets the SPA detect it is embedded |
+| `shell.info` | `{}` | `{shellVersion, platform, instanceId, scope, appName}` — lets the SPA detect it is embedded; sep-1: `scope`/`appName` mirror the registration's app block (`instance` + `""` when unclamped). The URL (`?shellApp=`) stays the clamp channel of record — this is garnish for shell-aware pages |
 | `shell.instance.list` | `{}` | `{instances: [{id, displayName, reachability: {state, at, evidence}}]}` |
 | `shell.instance.switch` | `{id}` | `{switched: true}` — the shell swaps the browser |
 | `shell.reachability.get` | `{}` | current instance probe state |

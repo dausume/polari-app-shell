@@ -21,6 +21,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 
 import org.polari.shell.core.bridge.BridgeRouter;
+import org.polari.shell.core.config.ShellConfig;
+import org.polari.shell.core.config.StartUrl;
 import org.polari.shell.core.net.ReachabilityProbe;
 import org.polari.shell.core.registry.InstanceRegistry;
 import org.polari.shell.core.registry.RegisteredInstance;
@@ -38,6 +40,9 @@ final class ShellFrame {
 
     private final InstanceRegistry registry;
     private final List<RegisteredInstance> all;
+    // sep-1: the launcher's app block — scope=app clamps the SPA to
+    // ONE app via the URL (StartUrl appends ?shellApp=).
+    private final ShellConfig.App app;
     private final JFrame frame =
             new JFrame("Polari");
     private RegisteredInstance current;
@@ -48,11 +53,13 @@ final class ShellFrame {
     ShellFrame(InstanceRegistry registry,
                RegisteredInstance current,
                ReachabilityProbe.Result probe,
-               List<RegisteredInstance> all) {
+               List<RegisteredInstance> all,
+               ShellConfig.App app) {
         this.registry = registry;
         this.current = current;
         this.probe = probe;
         this.all = all;
+        this.app = app == null ? new ShellConfig.App() : app;
     }
 
     void open() {
@@ -153,7 +160,7 @@ final class ShellFrame {
     }
 
     private String startUrl() {
-        return current.config.webUrl;
+        return StartUrl.of(current.config.webUrl, app);
     }
 
     private void loadWeb() {
@@ -208,6 +215,14 @@ final class ShellFrame {
             o.addProperty("shellVersion", "0.1.0");
             o.addProperty("platform", "desktop-linux-x64");
             o.addProperty("instanceId", current.config.id);
+            // sep-1: shell-aware pages can read the clamp identity
+            // from the bridge too — the URL stays the channel of
+            // record (works in plain browsers), this is garnish.
+            o.addProperty("scope",
+                    app.scope == null || app.scope.isBlank()
+                            ? "instance" : app.scope);
+            o.addProperty("appName",
+                    app.appName == null ? "" : app.appName);
             return o;
         });
         bridge.on("shell.instance.list", p -> {
