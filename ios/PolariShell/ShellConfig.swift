@@ -18,6 +18,8 @@ struct ShellConfig: Codable {
         var startRoute = ""
         var brandColor = ""
         var icon = ""
+        /// sep-2: optional so pre-sep documents still decode.
+        var capabilities: [String]?
 
         /// sep-1 (mirror of core's StartUrl.of): a scope=app block
         /// clamps the SPA via `?shellApp=` on the opened URL; blank

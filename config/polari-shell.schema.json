@@ -18,7 +18,12 @@
         "appName": { "type": "string", "description": "PolariAppDefinition.name when scope=app" },
         "startRoute": { "type": "string" },
         "brandColor": { "type": "string" },
-        "icon": { "type": "string", "description": "base64 PNG, optional" }
+        "icon": { "type": "string", "description": "base64 PNG, optional" },
+        "capabilities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "sep-2: REFERENCES to edge-behavior rows in the app's own module (sep-5) — names of what this shell may do natively (camera, device passthrough...), never the definitions themselves"
+        }
       }
     },
     "instances": {

@@ -315,6 +315,10 @@ final class ShellFrame {
             JsonObject o = new JsonObject();
             String name = p.has("name")
                     ? p.get("name").getAsString() : "";
+            // sep-2: kind-aware package prefix (isle-app- vs
+            // polari-app-); isle stays the default.
+            String kind = p.has("kind")
+                    ? p.get("kind").getAsString() : "isle";
             if (!org.polari.shell.core.host.HostInstall
                     .validName(name)) {
                 o.addProperty("ok", false);
@@ -322,10 +326,18 @@ final class ShellFrame {
                         "refused: not an installable name");
                 return o;
             }
+            if (!org.polari.shell.core.host.HostInstall
+                    .validKind(kind)) {
+                o.addProperty("ok", false);
+                o.addProperty("error",
+                        "refused: not a launcher kind");
+                return o;
+            }
             try {
                 HostProcess.Result r = HostProcess.run(
                         org.polari.shell.core.host.HostInstall
-                                .installedVersionCommand(name), 10);
+                                .installedVersionCommand(name, kind),
+                        10);
                 o.addProperty("ok", true);
                 o.addProperty("installed", r.exitCode == 0
                         && !r.output.isBlank());

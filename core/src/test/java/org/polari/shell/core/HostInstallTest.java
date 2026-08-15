@@ -55,6 +55,22 @@ class HostInstallTest {
     }
 
     @Test
+    void installedVersionIsKindAware() {
+        // sep-2: the deb builder names packages <kind>-app-<name>;
+        // the query follows, isle stays the one-arg default.
+        assertEquals(List.of("dpkg-query", "-W", "-f",
+                "${Version}", "polari-app-wax-print-shop"),
+                HostInstall.installedVersionCommand(
+                        "wax-print-shop", "polari"));
+        assertTrue(HostInstall.validKind("isle"));
+        assertTrue(HostInstall.validKind("polari"));
+        assertFalse(HostInstall.validKind("evil"));
+        assertThrows(IllegalArgumentException.class,
+                () -> HostInstall.installedVersionCommand(
+                        "polari", "web; reboot"));
+    }
+
+    @Test
     void installedVersionRejectsBadNames() {
         assertThrows(IllegalArgumentException.class,
                 () -> HostInstall.installedVersionCommand(

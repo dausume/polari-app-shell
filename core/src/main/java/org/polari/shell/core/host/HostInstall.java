@@ -52,21 +52,38 @@ public final class HostInstall {
         return List.of("isle", "store", "list");
     }
 
+    /** sep-2: launcher packages come in two kinds — the deb builder
+     *  names them `<kind>-app-<name>`. Anything else is refused. */
+    public static boolean validKind(String kind) {
+        return "isle".equals(kind) || "polari".equals(kind);
+    }
+
     /**
      * Non-privileged installed-version query for ONE app's native
-     * launcher: `dpkg-query -W -f ${Version} isle-app-<name>`.
-     * Read-only, fixed argv, same allowlisted name — exit 0 with a
-     * version on stdout means "installed on this device".
+     * launcher: `dpkg-query -W -f ${Version} <kind>-app-<name>`.
+     * Read-only, fixed argv, allowlisted name AND kind — exit 0
+     * with a version on stdout means "installed on this device".
      *
-     * @throws IllegalArgumentException if the name is not allowlisted
+     * @throws IllegalArgumentException if name or kind is not
+     *         allowlisted
      */
-    public static List<String> installedVersionCommand(String name) {
+    public static List<String> installedVersionCommand(String name,
+                                                       String kind) {
         if (!validName(name)) {
             throw new IllegalArgumentException(
                     "refused: not an installable catalog name: "
                     + name);
         }
+        if (!validKind(kind)) {
+            throw new IllegalArgumentException(
+                    "refused: not a launcher kind: " + kind);
+        }
         return List.of("dpkg-query", "-W", "-f", "${Version}",
-                "isle-app-" + name);
+                kind + "-app-" + name);
+    }
+
+    /** Isle-kind convenience — the store's historical default. */
+    public static List<String> installedVersionCommand(String name) {
+        return installedVersionCommand(name, "isle");
     }
 }

@@ -24,6 +24,9 @@ public class ShellConfig {
         public String startRoute = "";
         public String brandColor = "";
         public String icon = "";
+        // sep-2: references to edge-behavior rows (sep-5); the
+        // native halves gate on these declarations.
+        public List<String> capabilities = new ArrayList<>();
     }
 
     public static class Enrollment {

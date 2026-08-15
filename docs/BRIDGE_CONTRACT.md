@@ -35,6 +35,12 @@ Response: `{ "id": "<uuid>", "ok": true, "payload": {...} }`
 | `shell.reachability.get` | `{}` | current instance probe state |
 | `shell.open.external` | `{url}` | `{opened: true}` — OS browser |
 
+Store messages (§31, desktop): `store.available {}` →
+`{available, mechanism}`; `store.install {name}` → pkexec via the
+fixed HostInstall argv; `store.status {name, kind?}` → installed
+version by dpkg — sep-2: `kind` picks the launcher package prefix
+(`isle` default | `polari`), same allowlist discipline as the name.
+
 Events (shell → page): `shell.reachability.changed`, `shell.deeplink`.
 
 ## Phase-2 additions (named, not built)
