@@ -34,6 +34,7 @@ Response: `{ "id": "<uuid>", "ok": true, "payload": {...} }`
 | `shell.instance.switch` | `{id}` | `{switched: true}` — the shell swaps the browser |
 | `shell.reachability.get` | `{}` | current instance probe state |
 | `shell.open.external` | `{url}` | `{opened: true}` — OS browser |
+| `shell.capabilities` | `{}` | `{capabilities: [name, ...]}` — sep-5: the registration's declared edge-behavior REFERENCES (AppEdgeBehavior rows; resolve via `GET /api/appstore/behaviors?names=...`). Declaration only — the gate (CapabilityGate + §5l helpers) refuses anything undeclared, default deny-all |
 
 Store messages (§31, desktop): `store.available {}` →
 `{available, mechanism}`; `store.install {name}` → pkexec via the

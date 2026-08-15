@@ -80,22 +80,27 @@ final class ShellFrame {
 
     /** The window wears its LAUNCHER's icon (the installed hicolor
      *  PNG named by the wmclass DesktopMain resolved) — same face
-     *  open as in the menu. Best-effort. */
+     *  open as in the menu. sep-5: the REGISTRATION's icon (base64
+     *  PNG riding app.icon) is the fallback when no launcher icon
+     *  is installed (e.g. --config runs). Best-effort. */
     private void applyLauncherIcon() {
         String pkg = System.getProperty(
                 "polari.shell.wmclass", "");
-        if (pkg.isBlank()) {
-            return;
-        }
         java.io.File png = new java.io.File(
                 "/usr/share/icons/hicolor/256x256/apps/"
                 + pkg + ".png");
-        if (!png.isFile()) {
-            return;
-        }
         try {
-            frame.setIconImage(
-                    javax.imageio.ImageIO.read(png));
+            if (!pkg.isBlank() && png.isFile()) {
+                frame.setIconImage(
+                        javax.imageio.ImageIO.read(png));
+                return;
+            }
+            if (app.icon != null && !app.icon.isBlank()) {
+                byte[] data = java.util.Base64.getDecoder()
+                        .decode(app.icon);
+                frame.setIconImage(javax.imageio.ImageIO.read(
+                        new java.io.ByteArrayInputStream(data)));
+            }
         } catch (Exception ignored) {
             // generic icon is the honest fallback
         }
@@ -123,6 +128,14 @@ final class ShellFrame {
         HBox bar = new HBox(10, picker, status, retry, openAnyway);
         bar.setPadding(new Insets(6));
         HBox.setHgrow(status, Priority.ALWAYS);
+        // sep-5: per-app branding actually applied — the chrome bar
+        // wears the registration's brandColor (validated; a bad
+        // value keeps the default rather than crashing the chrome).
+        String brand = app.brandColor == null
+                ? "" : app.brandColor.trim();
+        if (brand.matches("#[0-9a-fA-F]{6}")) {
+            bar.setStyle("-fx-background-color: " + brand + ";");
+        }
         return new Scene(bar);
     }
 
@@ -223,6 +236,19 @@ final class ShellFrame {
                             ? "instance" : app.scope);
             o.addProperty("appName",
                     app.appName == null ? "" : app.appName);
+            return o;
+        });
+        // sep-5: the declared edge-behavior REFERENCES — pages (and
+        // native halves) resolve definitions from the backend
+        // (/api/appstore/behaviors?names=...). Declaration only;
+        // capability gating stays CapabilityGate + the privileged
+        // helpers (§5l).
+        bridge.on("shell.capabilities", p -> {
+            JsonArray caps = new JsonArray();
+            org.polari.shell.core.config.CapabilityGate
+                    .declared(app).forEach(caps::add);
+            JsonObject o = new JsonObject();
+            o.add("capabilities", caps);
             return o;
         });
         bridge.on("shell.instance.list", p -> {
