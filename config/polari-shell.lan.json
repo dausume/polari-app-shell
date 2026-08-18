@@ -14,12 +14,12 @@
     {
       "id": "prf-pol-lan",
       "displayName": "Polari on the home wifi",
-      "webUrl": "https://prf.192.168.0.210.nip.io",
-      "apiUrl": "https://api.prf.192.168.0.210.nip.io",
-      "identityUrl": "https://auth.prf.192.168.0.210.nip.io",
+      "webUrl": "https://prf.192.0.2.10.nip.io",
+      "apiUrl": "https://api.prf.192.0.2.10.nip.io",
+      "identityUrl": "https://auth.prf.192.0.2.10.nip.io",
       "instanceId": "prf-pol",
       "auth": {
-        "authority": "https://auth.prf.192.168.0.210.nip.io/realms/Polari",
+        "authority": "https://auth.prf.192.0.2.10.nip.io/realms/Polari",
         "realm": "Polari",
         "clientId": "polari-frontend",
         "pkce": "S256",
@@ -37,9 +37,10 @@
           "cidrs": [
             "192.168.0.0/24"
           ],
-          "probeUrl": "https://api.prf.192.168.0.210.nip.io/api/health"
+          "probeUrl": "https://api.prf.192.0.2.10.nip.io/api/health"
         }
       }
     }
-  ]
+  ],
+  "_note": "EXAMPLE registration doc (192.0.2.10 is a documentation IP). Real registration docs are per-device: downloaded from the store or served by /api/appstore/{shell}/registration \u2014 never committed."
 }
