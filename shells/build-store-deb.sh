@@ -77,13 +77,20 @@ print(json.dumps({
 PYEOF
 [ -n "$CA_ARG" ] && [ -f "$CA_ARG" ] && cp "$CA_ARG" "$STAGE$SHARE/isle-root.crt"
 
+# ---- first-open launcher (the two-doors wrapper) ----
+# On a member the wrapper is a plain exec of the shell; on a fresh
+# device it offers core-install / join via polkit — the UI runs the
+# SAME terminal steps (see shells/store-launch.sh header).
+cp "$ROOT/shells/store-launch.sh" "$STAGE$SHARE/store-launch.sh"
+chmod 755 "$STAGE$SHARE/store-launch.sh"
+
 # ---- .desktop ----
 cat > "$STAGE/usr/share/applications/$PKG.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=Isle App Store
 Comment=Install and manage isle-mesh apps on this device
-Exec=/usr/bin/polari-app-shell --config $SHARE/polari-shell.json
+Exec=$SHARE/store-launch.sh
 Icon=$STORE_ICON
 Terminal=false
 Categories=Network;System;
@@ -137,7 +144,7 @@ Version: $VERSION
 Section: web
 Priority: optional
 Architecture: all
-Depends: polari-shell-core, policykit-1
+Depends: polari-shell-core, policykit-1, zenity
 Recommends: isle-mesh-cli
 Installed-Size: $INSTALLED_KB
 Maintainer: Polari <polari@localhost>
