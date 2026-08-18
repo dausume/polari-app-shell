@@ -27,6 +27,41 @@ agent_up() {
         | grep -qE '^isle-(vlan|remote)-agent$'
 }
 
+# ── the ISLE-ENDED prompt (unin-7) ──────────────────────────────────
+# isle-watch records when this device's CORE was deleted (kill signal)
+# or has been unreachable for a long time. Removal is NEVER automatic:
+# this is where the human decides, with the no-going-back warning.
+FLAG=/etc/isle-mesh/isle-ended
+if [ -f "$FLAG" ] && command -v zenity >/dev/null 2>&1; then
+    KIND=$(grep '^kind=' "$FLAG" | cut -d= -f2)
+    WHEN=$(grep '^when=' "$FLAG" | cut -d= -f2)
+    if [ "$KIND" = core-deleted ]; then
+        TXT="Your isle's CORE was DELETED ($WHEN — its uninstall sent the isle-ending signal).\n\nThe isle no longer exists: its CA, DNS, apt source, and core polari are gone, and a new core would be a DIFFERENT isle.\n\nRemove ALL polari-isle apps from THIS device?\nTHERE IS NO GOING BACK once removed (data volumes are backed up first)."
+    else
+        TXT="Your isle's core has been UNREACHABLE since $WHEN.\n\nIf it was deleted, this device's isle apps are orphaned. If it is only offline, choose 'The isle is back' once it returns.\n\nRemove ALL polari-isle apps from THIS device?\nTHERE IS NO GOING BACK once removed (data volumes are backed up first)."
+    fi
+    ANSWER=$(zenity --question --title "Isle ended?" --width 520 \
+        --text "$TXT" \
+        --ok-label "Remove everything (no going back)" \
+        --extra-button "Keep for now (ask again later)" \
+        --extra-button "The isle is back (clear the warning)" 2>/dev/null)
+    ARC=$?
+    ISLE_BIN=$(command -v isle 2>/dev/null || echo /usr/local/bin/isle)
+    if [ "$ARC" = 0 ]; then
+        for t in x-terminal-emulator gnome-terminal konsole xfce4-terminal xterm; do
+            command -v "$t" >/dev/null 2>&1 || continue
+            case "$t" in
+                gnome-terminal) "$t" --wait -- bash -c "pkexec $ISLE_BIN uninstall --everything; read -p 'Done — Enter closes...'" 2>/dev/null && break ;;
+                *) "$t" -e bash -c "pkexec $ISLE_BIN uninstall --everything; read -p 'Done — Enter closes...'" && break ;;
+            esac
+        done
+        exit 0
+    elif [ "$ANSWER" = "The isle is back (clear the warning)" ]; then
+        pkexec "$ISLE_BIN" watch clear 2>/dev/null
+    fi
+    # 'Keep for now' falls through — the shell opens, the flag stays
+fi
+
 # member/core already: straight into the store
 agent_up && open_shell
 
