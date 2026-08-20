@@ -71,6 +71,32 @@ class HostInstallTest {
     }
 
     @Test
+    void uninstallIsFixedArgvWithNameIsolated() {
+        // unin-4: the Uninstall button = this one engine verb, thin
+        assertEquals(List.of("pkexec", "isle", "store", "uninstall",
+                "odoo", "--yes"),
+                HostInstall.uninstallCommand("odoo", false));
+        assertEquals(List.of("pkexec", "isle", "store", "uninstall",
+                "odoo", "--yes", "--purge"),
+                HostInstall.uninstallCommand("odoo", true));
+        assertThrows(IllegalArgumentException.class,
+                () -> HostInstall.uninstallCommand("; reboot",
+                        true));
+    }
+
+    @Test
+    void meshDeployedIsFixedReadOnlyArgv() {
+        // unin-4: deployed-here probe — unprivileged, traversal-proof
+        assertEquals(List.of("test", "-d",
+                "/etc/isle-mesh/apps/whoami"),
+                HostInstall.meshDeployedCommand("whoami"));
+        assertFalse(HostInstall.meshDeployedCommand("whoami")
+                .contains("pkexec"));
+        assertThrows(IllegalArgumentException.class,
+                () -> HostInstall.meshDeployedCommand("../etc"));
+    }
+
+    @Test
     void installedVersionRejectsBadNames() {
         assertThrows(IllegalArgumentException.class,
                 () -> HostInstall.installedVersionCommand(

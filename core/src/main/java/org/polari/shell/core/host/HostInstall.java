@@ -47,6 +47,46 @@ public final class HostInstall {
                 name, "--yes");
     }
 
+    /**
+     * unin-4: the argv for a privileged per-app uninstall — the
+     * store's Uninstall buttons are THIN: this one engine verb via
+     * pkexec, zero teardown logic here. Same fixed shape and name
+     * allowlist as install; `purge` adds the single fixed flag
+     * (erase data, backed up first — the verb owns that policy).
+     *
+     * @throws IllegalArgumentException if the name is not allowlisted
+     */
+    public static List<String> uninstallCommand(String name,
+                                                boolean purge) {
+        if (!validName(name)) {
+            throw new IllegalArgumentException(
+                    "refused: not an installable catalog name: "
+                    + name);
+        }
+        return purge
+                ? List.of("pkexec", "isle", "store", "uninstall",
+                        name, "--yes", "--purge")
+                : List.of("pkexec", "isle", "store", "uninstall",
+                        name, "--yes");
+    }
+
+    /**
+     * unin-4: non-privileged "is this mesh-app deployed HERE?" —
+     * `test -d /etc/isle-mesh/apps/<name>`. Exit 0 = deployed on
+     * this device (the dpkg query only sees launcher debs). Fixed
+     * argv, allowlisted name, so no path traversal is possible.
+     *
+     * @throws IllegalArgumentException if the name is not allowlisted
+     */
+    public static List<String> meshDeployedCommand(String name) {
+        if (!validName(name)) {
+            throw new IllegalArgumentException(
+                    "refused: not an installable catalog name: "
+                    + name);
+        }
+        return List.of("test", "-d", "/etc/isle-mesh/apps/" + name);
+    }
+
     /** Non-privileged status/list — no pkexec, safe to run freely. */
     public static List<String> statusCommand() {
         return List.of("isle", "store", "list");

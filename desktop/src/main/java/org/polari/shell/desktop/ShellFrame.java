@@ -369,13 +369,107 @@ final class ShellFrame {
                         && !r.output.isBlank());
                 o.addProperty("version", r.exitCode == 0
                         ? r.output.trim() : "");
+                // unin-4: mesh-apps deploy as compose projects, not
+                // debs — a plain dir test says "runs HERE"
+                HostProcess.Result d = HostProcess.run(
+                        org.polari.shell.core.host.HostInstall
+                                .meshDeployedCommand(name), 10);
+                o.addProperty("deployed", d.exitCode == 0);
             } catch (Exception e) {
                 o.addProperty("ok", false);
                 o.addProperty("error", e.toString());
             }
             return o;
         });
+        // unin-4: the store's Uninstall buttons are THIN — one
+        // pkexec invocation of the same engine verb the terminal
+        // uses (`isle store uninstall <name> [--purge]`), zero
+        // teardown logic here. Same allowlist boundary as install.
+        bridge.on("store.uninstall", p -> {
+            JsonObject o = new JsonObject();
+            String name = p.has("name")
+                    ? p.get("name").getAsString() : "";
+            boolean purge = p.has("purge")
+                    && p.get("purge").getAsBoolean();
+            if (!org.polari.shell.core.host.HostInstall
+                    .validName(name)) {
+                o.addProperty("ok", false);
+                o.addProperty("error",
+                        "refused: not an installable name");
+                return o;
+            }
+            try {
+                var cmd = org.polari.shell.core.host.HostInstall
+                        .uninstallCommand(name, purge);
+                HostProcess.Result r =
+                        HostProcess.run(cmd, 600);
+                o.addProperty("ok", r.exitCode == 0);
+                o.addProperty("exitCode", r.exitCode);
+                o.addProperty("output", r.output);
+            } catch (Exception e) {
+                o.addProperty("ok", false);
+                o.addProperty("error", e.toString());
+            }
+            return o;
+        });
+        // unin-4: "remove isle-mesh from this device" — the verb is
+        // INTERACTIVE (a yes/no, and on a core the typed 'delete the
+        // isle' cascade warning), so it needs a real terminal, not
+        // HostProcess. Mirror of store-launch.sh's unin-7 prompt:
+        // open a terminal, echo the terminal-route command, run the
+        // SAME verb under pkexec, hold the window open.
+        bridge.on("store.removeIsle", p -> {
+            JsonObject o = new JsonObject();
+            String script =
+                    "echo 'Remove isle-mesh from this device — the"
+                    + " same command the terminal route uses:'; "
+                    + "echo '  sudo isle uninstall --everything'; "
+                    + "echo; "
+                    + "ISLE=$(command -v isle"
+                    + " || echo /usr/local/bin/isle); "
+                    + "pkexec \"$ISLE\" uninstall --everything; "
+                    + "echo; "
+                    + "read -p 'Done - press Enter to close...'";
+            String opened = openTerminal(script);
+            o.addProperty("ok", opened != null);
+            if (opened != null) {
+                o.addProperty("terminal", opened);
+            } else {
+                o.addProperty("error", "no terminal emulator found"
+                        + " — run in any terminal:"
+                        + " sudo isle uninstall --everything");
+            }
+            return o;
+        });
         return bridge;
+    }
+
+    /** Launch `bash -c script` in the first terminal emulator that
+     *  starts (the store-launch.sh term_run list). The script is a
+     *  FIXED constant — nothing page-supplied reaches it. Returns
+     *  the emulator used, or null if none exists. */
+    private static String openTerminal(String script) {
+        String[][] candidates = {
+            {"x-terminal-emulator", "-e"},
+            {"gnome-terminal", "--"},
+            {"konsole", "-e"},
+            {"xfce4-terminal", "-e"},
+            {"xterm", "-e"},
+        };
+        for (String[] c : candidates) {
+            try {
+                java.util.List<String> argv = "--".equals(c[1])
+                        ? java.util.List.of(c[0], "--",
+                                "bash", "-c", script)
+                        : java.util.List.of(c[0], c[1],
+                                "bash", "-c", script);
+                new ProcessBuilder(argv).start();
+                return c[0];
+            } catch (Exception e) {
+                // not installed — try the next one
+            }
+        }
+        return null;
     }
 
     private String advisoryDataUrl() {
