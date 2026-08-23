@@ -58,6 +58,21 @@ class ConfigAndRegistryTest {
                 reg.merge(ConfigLoader.parse(DOC).orElseThrow(),
                         "deeplink"));
         assertTrue(reg.conflicts().isEmpty());
+        // REINSTALL semantics (finding #8 family): same id, same
+        // URL, CHANGED fields -> the registration REFRESHES in
+        // place — one entry, no duplicate, no conflict, new
+        // fields live. This is what lets a fixed deb config heal
+        // an already-registered instance on the next launch.
+        ShellConfig refreshed = ConfigLoader.parse(DOC)
+                .orElseThrow();
+        refreshed.instances.get(0).tls.caFile
+                .add("/etc/isle-mesh/ca/isle-root.crt");
+        assertEquals(List.of(), reg.merge(refreshed, "baked"));
+        assertTrue(reg.conflicts().isEmpty());
+        assertEquals(1, reg.all().size(),
+                "re-merge must never duplicate the instance");
+        assertEquals(List.of("/etc/isle-mesh/ca/isle-root.crt"),
+                reg.get("prf-a").orElseThrow().config.tls.caFile);
         // Same id, DIFFERENT url -> conflict recorded, not
         // overwritten (add-only contract).
         ShellConfig hostile = ConfigLoader.parse(

@@ -24,6 +24,7 @@
 # in polari-shell-core.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"  # assets beside the script (both layouts)
 NAME=""; TITLE=""; URL=""; KIND="isle"; INSTANCE=""; CA=""; ICON=""
 SCOPE="instance"; APP_NAME=""; START_ROUTE=""; CAPABILITIES=""
 REGISTRATION=""
@@ -147,7 +148,7 @@ fi
 
 # ---- icon: --icon wins; else the POLARI MARK is the default for
 # every isle/polari app (Dustin) ----
-DEFAULT_ICON="$ROOT/shells/icons/polari-mark.png"
+DEFAULT_ICON="$SELF_DIR/icons/polari-mark.png"
 [ -n "$ICON" ] && [ -f "$ICON" ] || ICON="$DEFAULT_ICON"
 if [ -f "$ICON" ]; then
     cp "$ICON" "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"

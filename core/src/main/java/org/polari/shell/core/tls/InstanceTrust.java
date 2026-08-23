@@ -55,11 +55,19 @@ public final class InstanceTrust {
      */
     public static java.util.List<String> effectivePems(
             InstanceConfig.Tls tls) {
-        java.util.List<String> out = new java.util.ArrayList<>();
+        // Deduplicated by content hash: the two canonical caFile
+        // paths hold the SAME minted cert, and a delivered caPem
+        // may repeat it again — one trust entry per distinct CA,
+        // however many roads it arrived by (reinstall-dedup rule,
+        // Dustin 2026-08-23).
+        java.util.LinkedHashMap<String, String> byHash =
+                new java.util.LinkedHashMap<>();
         if (tls == null) {
-            return out;
+            return new java.util.ArrayList<>();
         }
-        out.addAll(tls.caPem);
+        for (String pem : tls.caPem) {
+            byHash.putIfAbsent(pemSha256(pem), pem);
+        }
         for (String file : tls.caFile) {
             if (file == null || file.isBlank()) {
                 continue;
@@ -70,14 +78,14 @@ public final class InstanceTrust {
                     String pem = Files.readString(p,
                             StandardCharsets.UTF_8);
                     if (pem.contains("BEGIN CERTIFICATE")) {
-                        out.add(pem);
+                        byHash.putIfAbsent(pemSha256(pem), pem);
                     }
                 }
             } catch (Exception ignored) {
                 // unreadable now — same as not yet minted
             }
         }
-        return out;
+        return new java.util.ArrayList<>(byHash.values());
     }
 
     public static boolean matchesPin(InstanceConfig.Tls tls) {

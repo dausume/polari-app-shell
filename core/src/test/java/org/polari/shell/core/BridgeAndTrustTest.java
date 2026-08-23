@@ -60,6 +60,16 @@ class BridgeAndTrustTest {
         assertEquals(2, pems.size(),
                 "delivered caPem + minted caFile both present");
         assertTrue(pems.contains(pem));
+        // the SAME cert arriving by several roads (delivered pem +
+        // both canonical file paths) collapses to ONE trust entry
+        java.nio.file.Path copy = java.nio.file.Files
+                .createTempFile("isle-root-copy", ".crt");
+        java.nio.file.Files.writeString(copy, pem);
+        tls.caPem.add(pem);
+        tls.caFile.add(copy.toString());
+        assertEquals(2, InstanceTrust.effectivePems(tls).size(),
+                "duplicate CA content must deduplicate by hash");
+        java.nio.file.Files.deleteIfExists(copy);
         // non-certificate file content is refused, not trusted
         java.nio.file.Path junk = java.nio.file.Files
                 .createTempFile("not-a-cert", ".crt");

@@ -16,6 +16,10 @@
 #       [--version 0.1.0] [--output dist]
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# assets sit BESIDE this script in both layouts (app-shell/shells
+# and the vendored isle-cli/shells/tools copy — reinstall-dedup
+# rule 2026-08-23: ONE canonical source, synced by the bundle build)
+SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 URL="https://polari.isle/isle"
 CA=""; VERSION=0.1.0; OUTPUT="$ROOT/dist"
 while [ $# -gt 0 ]; do case "$1" in
@@ -35,7 +39,7 @@ rm -rf "$STAGE"; mkdir -p "$STAGE/DEBIAN" "$STAGE$SHARE" \
     "$STAGE/usr/share/icons/hicolor/256x256/apps" "$OUTPUT"
 
 # the ISLAND mark (CC0, shells/icons) is the store's icon
-ISLAND="$ROOT/shells/icons/isle-island.png"
+ISLAND="$SELF_DIR/icons/isle-island.png"
 if [ -f "$ISLAND" ]; then
     cp "$ISLAND" \
         "$STAGE/usr/share/icons/hicolor/256x256/apps/$PKG.png"
@@ -89,7 +93,7 @@ PYEOF
 # On a member the wrapper is a plain exec of the shell; on a fresh
 # device it offers core-install / join via polkit — the UI runs the
 # SAME terminal steps (see shells/store-launch.sh header).
-cp "$ROOT/shells/store-launch.sh" "$STAGE$SHARE/store-launch.sh"
+cp "$SELF_DIR/store-launch.sh" "$STAGE$SHARE/store-launch.sh"
 chmod 755 "$STAGE$SHARE/store-launch.sh"
 
 # ---- .desktop ----
