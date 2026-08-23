@@ -187,7 +187,8 @@ final class ShellFrame {
             try {
                 probe = ReachabilityProbe.probe(current.config,
                         InstanceTrust.sslContext(
-                                current.config.tls.caPem));
+                                InstanceTrust.effectivePems(
+                                        current.config.tls)));
             } catch (Exception e) {
                 probe = new ReachabilityProbe.Result(
                         ReachabilityProbe.UNKNOWN, e.toString());

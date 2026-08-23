@@ -28,6 +28,16 @@ public class InstanceConfig {
 
     public static class Tls {
         public List<String> caPem = new ArrayList<>();
+        /**
+         * CA FILE references, resolved at trust-build time on THIS
+         * device. Exists because a config can be baked before its
+         * CA is born: the store deb is built pre-install, the isle
+         * CA is minted BY core-install — found live 2026-08-21 when
+         * the first store open after a flawless install failed PKIX.
+         * Absent/unreadable paths are skipped (the CA simply is not
+         * minted yet); present files join caPem in the pinned trust.
+         */
+        public List<String> caFile = new ArrayList<>();
         public String caSha256 = "";
     }
 

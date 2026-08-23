@@ -39,6 +39,39 @@ class BridgeAndTrustTest {
     }
 
     @Test
+    void caFileReferencesResolveAtTrustBuildTime() throws Exception {
+        // The store-deb case: config baked BEFORE the isle CA is
+        // minted (live finding 2026-08-21). Absent paths are
+        // skipped; once the file appears, the pinned trust picks
+        // it up with no config rewrite and no trust-anyway click.
+        InstanceConfig.Tls tls = new InstanceConfig.Tls();
+        tls.caFile.add("/nonexistent/isle-root.crt");
+        assertTrue(InstanceTrust.effectivePems(tls).isEmpty(),
+                "absent caFile must be skipped, not fail");
+
+        java.nio.file.Path minted = java.nio.file.Files
+                .createTempFile("isle-root", ".crt");
+        String pem = "-----BEGIN CERTIFICATE-----\nMIIB\n"
+                + "-----END CERTIFICATE-----\n";
+        java.nio.file.Files.writeString(minted, pem);
+        tls.caFile.add(minted.toString());
+        tls.caPem.add("delivered-pem-placeholder");
+        List<String> pems = InstanceTrust.effectivePems(tls);
+        assertEquals(2, pems.size(),
+                "delivered caPem + minted caFile both present");
+        assertTrue(pems.contains(pem));
+        // non-certificate file content is refused, not trusted
+        java.nio.file.Path junk = java.nio.file.Files
+                .createTempFile("not-a-cert", ".crt");
+        java.nio.file.Files.writeString(junk, "hello");
+        tls.caFile.add(junk.toString());
+        assertEquals(2, InstanceTrust.effectivePems(tls).size(),
+                "a file without BEGIN CERTIFICATE is skipped");
+        java.nio.file.Files.deleteIfExists(minted);
+        java.nio.file.Files.deleteIfExists(junk);
+    }
+
+    @Test
     void pemFingerprintMatchesBackendConvention() {
         // Backend: hashlib.sha256(pem_bytes).hexdigest() — the two
         // sides must agree byte-for-byte for the TOFU pin to hold.

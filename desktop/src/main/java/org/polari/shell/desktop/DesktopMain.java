@@ -106,7 +106,7 @@ public final class DesktopMain {
 
         // 5. Probe + advisory (advise, never block).
         SSLContext trust = InstanceTrust.sslContext(
-                inst.config.tls.caPem);
+                InstanceTrust.effectivePems(inst.config.tls));
         ReachabilityProbe.Result probe =
                 ReachabilityProbe.probe(inst.config, trust);
         inst.lastProbe.at = java.time.Instant.now().toString();

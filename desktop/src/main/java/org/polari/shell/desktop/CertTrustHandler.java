@@ -59,12 +59,12 @@ final class CertTrustHandler extends CefRequestHandlerAdapter {
             CefCallback callback) {
         String host = hostOf(requestUrl);
         int port = portOf(requestUrl);
-        if (inst.tls.caPem.isEmpty()) {
+        if (InstanceTrust.effectivePems(inst.tls).isEmpty()) {
             System.err.println("[tls] REFUSED " + requestUrl
                     + " (" + certError + "): no CA pinned for "
-                    + "instance '" + inst.id + "' — import the CA "
-                    + "into the OS store or re-register with a "
-                    + "config that carries tls.caPem");
+                    + "instance '" + inst.id + "' — no tls.caPem "
+                    + "delivered and no tls.caFile path exists yet "
+                    + "on this device (is the isle installed?)");
             callback.cancel();
             return true;
         }
@@ -75,9 +75,16 @@ final class CertTrustHandler extends CefRequestHandlerAdapter {
             callback.cancel();
             return true;
         }
-        boolean ok = verdicts.computeIfAbsent(host + ":" + port,
-                k -> pinnedHandshake(host, port));
+        // Cache POSITIVE verdicts only. A cached negative outlived
+        // its cause (the CA landing on disk moments later) and made
+        // the user 'trust twice' on first run — found live
+        // 2026-08-21. Failed handshakes re-verify every time; they
+        // are rare and cheap.
+        String key = host + ":" + port;
+        boolean ok = Boolean.TRUE.equals(verdicts.get(key))
+                || pinnedHandshake(host, port);
         if (ok) {
+            verdicts.put(key, true);
             callback.Continue();
         } else {
             System.err.println("[tls] REFUSED " + requestUrl
@@ -94,7 +101,7 @@ final class CertTrustHandler extends CefRequestHandlerAdapter {
     private boolean pinnedHandshake(String host, int port) {
         try {
             SSLContext ctx = InstanceTrust.sslContext(
-                    inst.tls.caPem);
+                    InstanceTrust.effectivePems(inst.tls));
             if (ctx == null) {
                 return false;
             }

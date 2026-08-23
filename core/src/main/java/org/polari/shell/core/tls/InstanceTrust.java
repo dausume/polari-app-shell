@@ -2,6 +2,8 @@ package org.polari.shell.core.tls;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -40,6 +42,42 @@ public final class InstanceTrust {
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * The instance's live CA set: delivered caPem PLUS any caFile
+     * paths readable on this device right now. File references are
+     * how a config baked BEFORE its CA exists (the store deb is
+     * built pre-install; core-install mints the CA) still gets
+     * pinned trust on the very next launch — no config rewrite, no
+     * trust-anyway button. A path that does not exist yet is
+     * skipped: the CA has simply not been minted.
+     */
+    public static java.util.List<String> effectivePems(
+            InstanceConfig.Tls tls) {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (tls == null) {
+            return out;
+        }
+        out.addAll(tls.caPem);
+        for (String file : tls.caFile) {
+            if (file == null || file.isBlank()) {
+                continue;
+            }
+            try {
+                Path p = Path.of(file);
+                if (Files.isReadable(p)) {
+                    String pem = Files.readString(p,
+                            StandardCharsets.UTF_8);
+                    if (pem.contains("BEGIN CERTIFICATE")) {
+                        out.add(pem);
+                    }
+                }
+            } catch (Exception ignored) {
+                // unreadable now — same as not yet minted
+            }
+        }
+        return out;
     }
 
     public static boolean matchesPin(InstanceConfig.Tls tls) {
