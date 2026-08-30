@@ -6,3 +6,4 @@ local.properties
 .vscode/
 config/polari-shell.local.json
 dist/
+core/bin/
