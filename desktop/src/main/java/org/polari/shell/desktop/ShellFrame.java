@@ -442,6 +442,17 @@ final class ShellFrame {
             }
             return o;
         });
+        // ci-11b: the pipeline family (`pipeline.available` /
+        // `pipeline.run` / `pipeline.privileged`). Registering the
+        // handlers is ALL that happens here — the allowlist, the
+        // validation, the pkexec argv and the secret dialog all live
+        // in core.pipeline / desktop.pipeline, so this frame gains
+        // no knowledge of what a pipeline verb means.
+        new org.polari.shell.desktop.pipeline.PipelineBridge(
+                org.polari.shell.desktop.pipeline.PipelineRunner
+                        .discover(new org.polari.shell.desktop
+                                .pipeline.SwingSecretPrompt(frame)))
+                .registerOn(bridge);
         return bridge;
     }
 

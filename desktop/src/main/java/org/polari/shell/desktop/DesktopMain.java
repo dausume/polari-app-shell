@@ -27,6 +27,12 @@ import org.polari.shell.core.tls.InstanceTrust;
  *   later launch silent.
  *
  * Args: [--config <path>] [--deeplink <polari://...>]
+ *       [--pipeline-setup <first-step-id>]
+ *
+ * <p>ci-11b: `--pipeline-setup` opens the native first-run panel
+ * instead of the browser. The LAUNCHER script decides when (no
+ * device.env yet / nothing answers) and names the first step, so no
+ * pipeline knowledge lands in this Java half.
  */
 public final class DesktopMain {
 
@@ -120,10 +126,26 @@ public final class DesktopMain {
 
         registry.save();
 
-        // 7. Chrome + browser.
+        // 7. Chrome + browser — unless the launcher says this device
+        // has not been set up yet (ci-11b).
         List<RegisteredInstance> all = registry.all();
-        SwingUtilities.invokeLater(() -> new ShellFrame(
-                registry, inst, probe, all, appBlock[0]).open());
+        Runnable openShell = () -> new ShellFrame(
+                registry, inst, probe, all, appBlock[0]).open();
+        Optional<String> firstStep = argValue(args,
+                "--pipeline-setup");
+        if (firstStep.isPresent()) {
+            SwingUtilities.invokeLater(() ->
+                    new org.polari.shell.desktop.pipeline
+                            .PipelineSetupWindow().open(
+                            org.polari.shell.desktop.pipeline
+                                    .PipelineRunner.discover(
+                                    new org.polari.shell.desktop
+                                            .pipeline
+                                            .SwingSecretPrompt(null)),
+                            firstStep.get(), openShell));
+            return;
+        }
+        SwingUtilities.invokeLater(openShell);
     }
 
     /** The launcher deb's package name for an app ('polari' →
@@ -135,7 +157,11 @@ public final class DesktopMain {
         }
         String n = appName.toLowerCase()
                 .replaceAll("[^a-z0-9.-]", "-");
+        // ci-11b: `polari-pipeline` is a package in its own right
+        // (not a per-app launcher), so a name that already IS a
+        // polari-* package passes through unchanged.
         return n.contains("-app-") || n.startsWith("isle-app")
+                || n.startsWith("polari-")
                 ? n : "isle-app-" + n;
     }
 

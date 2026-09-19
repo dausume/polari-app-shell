@@ -12,6 +12,12 @@ plugins {
 dependencies {
     implementation(project(":core"))
     implementation(libs.jcefmaven)
+    // ci-11b: the pipeline bridge's reply SHAPE is a contract with
+    // the Polari page, so it gets tests here. Headless only — no
+    // JCEF, no JavaFX toolkit, no process is ever started.
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
 }
 
 // The store's tarball overlay drops the registration document at

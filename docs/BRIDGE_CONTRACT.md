@@ -51,6 +51,29 @@ erases). `store.removeIsle {}` → opens a terminal running
 the core-cascade typed confirmation live in the terminal, exactly
 the store-launch.sh unin-7 pattern); replies `{ok, terminal|error}`.
 
+Pipeline messages (ci-11b, desktop — `polari-pipeline`):
+
+| type | payload | response payload |
+|---|---|---|
+| `pipeline.available` | `{}` | `{available, mechanism: "pkexec", verbsProtocol: "polari-pipeline-shell/1", verbs: [ids]}` — `available` is false when no allowlist is installed |
+| `pipeline.run` | `{verb, params}` | `{ok, exitCode, output, json?}` — an UNPRIVILEGED verb as the desktop user; `json` appears only when stdout parsed as JSON |
+| `pipeline.privileged` | `{verb, params}` | `{ok, exitCode, output}` — a PRIVILEGED verb under `pkexec`, output scrubbed of any secret; never carries `json` |
+
+A page passes a verb **id** and string **parameters** — never an
+argv, a flag, a path or a secret. The id must exist in
+`/usr/share/polari-pipeline/shell-verbs.json` and carry the matching
+`privileged` flag (a privileged verb is refused on `pipeline.run`
+and vice versa); every `{param}` is matched against that verb's own
+regex; and the resolved `argv[0]` must be one of `pol | apt-get |
+usermod | nmcli` — a second allowlist hard-coded in the shell, so a
+tampered JSON file cannot introduce a new program. `pkexec` never
+sees the real command: it runs the polkit-pinned wrapper
+`/usr/lib/polari-pipeline/privileged-run`, which re-validates
+everything as root. When a verb declares `stdin: "secret"` the SHELL
+opens a native password dialog and writes the value to the child's
+stdin — it never enters the page, an argv or a log. Timeouts: 600 s
+for `apt-get`, 120 s otherwise. See `pipeline/README.md`.
+
 Events (shell → page): `shell.reachability.changed`, `shell.deeplink`.
 
 ## Phase-2 additions (named, not built)

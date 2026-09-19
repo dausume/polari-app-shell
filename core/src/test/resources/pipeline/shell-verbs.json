@@ -1,0 +1,79 @@
+{
+  "_comment": "FIXTURE COPY of polari-jenkins/shell-verbs.json (ci-11b). The tracked original is built by the bash half; this copy exists only so :core tests can run before/without it. Keep the verb list identical.",
+  "protocol": "polari-pipeline-shell/1",
+  "verbs": {
+    "init-device": {
+      "argv": ["pol", "jenkins", "init-device"],
+      "privileged": true,
+      "stdin": null,
+      "params": {},
+      "label": "Create the polari-ci user and move the secrets out of the checkout"
+    },
+    "secrets-put": {
+      "argv": ["pol", "jenkins", "secrets", "put", "{area}/{name}"],
+      "privileged": true,
+      "stdin": "secret",
+      "params": {"area": "^[a-z]+$", "name": "^[a-z_]+$"},
+      "label": "Store one secret"
+    },
+    "apt-install-tools": {
+      "argv": ["apt-get", "install", "-y", "docker.io", "python3",
+               "git", "curl", "whiptail"],
+      "privileged": true,
+      "stdin": null,
+      "params": {},
+      "label": "Install the host tools the pipeline needs"
+    },
+    "docker-group": {
+      "argv": ["usermod", "-aG", "docker", "{user}"],
+      "privileged": true,
+      "stdin": null,
+      "params": {"user": "^[a-z_][a-z0-9_-]{0,31}$"},
+      "label": "Let this account talk to the docker socket"
+    },
+    "wired-up": {
+      "argv": ["nmcli", "con", "up", "{con}"],
+      "privileged": true,
+      "stdin": null,
+      "params": {"con": "^[A-Za-z0-9 ._-]{1,64}$"},
+      "label": "Bring the wired connection up"
+    },
+    "doctor": {
+      "argv": ["pol", "jenkins", "doctor"],
+      "privileged": false,
+      "stdin": null,
+      "params": {},
+      "label": "What is configured, and what is not"
+    },
+    "preflight": {
+      "argv": ["pol", "jenkins", "preflight", "--isle", "--json"],
+      "privileged": false,
+      "stdin": null,
+      "params": {},
+      "label": "Is this device fit to run the pipeline"
+    },
+    "setup-step": {
+      "argv": ["pol", "jenkins", "setup", "--json", "--step",
+               "{step}"],
+      "privileged": false,
+      "stdin": null,
+      "params": {"step": "^[a-z-]+$"},
+      "label": "Read one setup step"
+    },
+    "setup-run": {
+      "argv": ["pol", "jenkins", "setup", "--json", "--run",
+               "{action}"],
+      "privileged": false,
+      "stdin": null,
+      "params": {"action": "^[a-z-]+$"},
+      "label": "Run one setup action"
+    },
+    "up": {
+      "argv": ["pol", "jenkins", "up"],
+      "privileged": false,
+      "stdin": null,
+      "params": {},
+      "label": "Bring the controller up"
+    }
+  }
+}

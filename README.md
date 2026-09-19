@@ -49,6 +49,10 @@ authoritative.
 - `docs/BRIDGE_CONTRACT.md` — the window.PolariShell JSON bridge.
 - Deep link: `polari://register?api=…&t=…&ca=…&scope=…&nk=…&nn=…`
   (ca = TOFU pin; scope/nk/nn phrase the network advisory offline).
+- `pipeline/README.md` — the Polari Pipeline app (ci-11b): the verb
+  allowlist, the pkexec + polkit boundary, and the native first-run
+  panel. Build its deb with `shells/build-pipeline-deb.sh`; test the
+  privileged wrapper with `pipeline/selftest.sh` (no sudo).
 
 ## Publishing to a store
 

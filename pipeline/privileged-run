@@ -1,0 +1,77 @@
+#!/bin/sh
+# privileged-run — the ONE program pkexec is allowed to run for the
+# Polari Pipeline app (ci-11b).
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# pkexec with no polkit action runs WHATEVER argv it is handed, after
+# an admin password. That is fine for the store (one fixed command,
+# one validated name) but not for a setup walkthrough with ten verbs:
+# the password would authorise "run this command line as root", and
+# every future verb would widen it.
+#
+# So the polkit action `org.polari.pipeline.run` pins
+# `org.freedesktop.policykit.exec.path` at THIS script. pkexec can
+# therefore only ever start this file; the verb id and its parameters
+# arrive as ordinary arguments, and this file decides — as root, from
+# the file on disk — whether they are allowed. The person's password
+# now authorises "let the pipeline do one of its allowlisted setup
+# steps", which is a promise that can be kept.
+#
+# It re-validates INDEPENDENTLY of the shell: same shell-verbs.json,
+# same argv[0] allowlist, no trust in the caller at all.
+#
+#   privileged-run <verb-id> [name=value ...]
+#   (a secret, when the verb declares one, arrives on stdin and is
+#    passed straight through to the child — never an argument)
+set -eu
+
+VERBS=/usr/share/polari-pipeline/shell-verbs.json
+HELPER=/usr/lib/polari-pipeline/verb-argv.py
+# Selftest escape. It applies ONLY to a non-root run, and pkexec
+# always runs this script as root, so it can never relax the
+# privileged path — it exists so the shipped validation can be tested
+# without sudo.
+if [ "${POLARI_PIPELINE_SELFTEST:-0}" = "1" ] && [ "$(id -u)" != "0" ]; then
+    VERBS="${POLARI_PIPELINE_VERBS:-$VERBS}"
+    HELPER="${POLARI_PIPELINE_HELPER:-$HELPER}"
+fi
+
+if [ "$#" -lt 1 ]; then
+    echo "usage: privileged-run <verb-id> [name=value ...]" >&2
+    exit 64
+fi
+[ -r "$VERBS" ] || {
+    echo "privileged-run: no verb allowlist at $VERBS" >&2
+    exit 66
+}
+[ -r "$HELPER" ] || {
+    echo "privileged-run: no validator at $HELPER" >&2
+    exit 66
+}
+
+# The validator prints the resolved argv one element per line; it has
+# already proven no element carries a control character, so splitting
+# on newline alone is exact (values with spaces stay ONE element).
+ARGV_TEXT=$(python3 "$HELPER" "$VERBS" "$@")
+OLDIFS=$IFS
+IFS='
+'
+# shellcheck disable=SC2086
+set -- $ARGV_TEXT
+IFS=$OLDIFS
+
+# Belt and braces: the same hard-coded allowlist, in this file, as
+# the last line before exec. If the validator were ever replaced with
+# something permissive, this still holds.
+case "$(basename "$1")" in
+    pol|apt-get|usermod|nmcli) ;;
+    *) echo "privileged-run: refused argv[0] $1" >&2; exit 65 ;;
+esac
+
+if [ "${POLARI_PIPELINE_DRY:-0}" = "1" ] && [ "$(id -u)" != "0" ]; then
+    printf '%s\n' "$@"
+    exit 0
+fi
+
+exec "$@"

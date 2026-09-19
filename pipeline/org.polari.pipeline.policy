@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD polkit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!--
+  org.polari.pipeline.policy (ci-11b) — ONE action, pinned at ONE
+  program.
+
+  Without this file, pkexec would happily run any argv the shell
+  handed it after an admin password: the password would authorise
+  "run this command line as root". With it, polkit will only ever
+  start /usr/lib/polari-pipeline/privileged-run, which re-reads the
+  shipped verb allowlist AS ROOT and refuses anything outside it. The
+  password now authorises "let the Polari pipeline take one of its
+  allowlisted setup steps" — a promise the code can actually keep.
+
+  auth_admin_keep: the setup walkthrough runs several privileged
+  steps in a row; keeping the authorisation for the session is the
+  difference between a guided app and five password prompts. It is
+  still an ADMIN authorisation, and it still only unlocks the
+  wrapper.
+-->
+<policyconfig>
+
+  <vendor>Polari</vendor>
+
+  <action id="org.polari.pipeline.run">
+    <description>Set up the Polari build pipeline on this computer</description>
+    <message>Authentication is required to change this computer's Polari pipeline setup</message>
+    <icon_name>polari-pipeline</icon_name>
+    <defaults>
+      <allow_any>auth_admin</allow_any>
+      <allow_inactive>auth_admin</allow_inactive>
+      <allow_active>auth_admin_keep</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/lib/polari-pipeline/privileged-run</annotate>
+    <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
+  </action>
+
+</policyconfig>
