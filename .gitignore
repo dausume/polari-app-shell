@@ -7,3 +7,4 @@ local.properties
 config/polari-shell.local.json
 dist/
 core/bin/
+desktop/bin/
