@@ -48,6 +48,8 @@ public final class HardwareBridgePanel extends JPanel {
             new DefaultListModel<>();
     private final JList<String> steps = new JList<>(stepModel);
     private final JLabel banner = new JLabel(" ");
+    private final JLabel purpose = new JLabel(" ");
+    private List<Bundle.Step> stepInfo = Bundle.stepsFrom(null);
 
     private Bundle bundle;
     private boolean gatePassed;
@@ -82,6 +84,7 @@ public final class HardwareBridgePanel extends JPanel {
         steps.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 cards.show(right, "s" + steps.getSelectedIndex());
+                showPurpose();
             }
         });
         add(new JScrollPane(steps), BorderLayout.WEST);
@@ -92,7 +95,11 @@ public final class HardwareBridgePanel extends JPanel {
         right.add(flashCard(), "s3");
         right.add(bridgeCard(), "s4");
         right.add(lightCard(), "s5");
-        add(right, BorderLayout.CENTER);
+        JPanel centre = new JPanel(new BorderLayout(0, 6));
+        purpose.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        centre.add(purpose, BorderLayout.NORTH);
+        centre.add(right, BorderLayout.CENTER);
+        add(centre, BorderLayout.CENTER);
 
         banner.setFont(banner.getFont().deriveFont(Font.BOLD));
         JPanel south = new JPanel(new BorderLayout());
@@ -133,10 +140,12 @@ public final class HardwareBridgePanel extends JPanel {
 
     private void bundleOpened(Bundle b) {
         bundle = b;
-        List<String> names = b.stepNames();
-        for (int i = 0; i < names.size(); i++) {
-            stepModel.set(i, names.get(i));
+        stepInfo = b.steps();
+        for (int i = 0; i < stepInfo.size()
+                && i < stepModel.size(); i++) {
+            stepModel.set(i, stepInfo.get(i).name());
         }
+        showPurpose();
         openOut.setText("Opened " + b.dir.getFileName() + ".\n"
                 + (b.hasFirmware() ? "" : "It has no firmware.hex.\n")
                 + (java.nio.file.Files.isRegularFile(b.jar()) ? ""
@@ -392,6 +401,14 @@ public final class HardwareBridgePanel extends JPanel {
             t.start();
         });
         poll.start();
+    }
+
+    private void showPurpose() {
+        int i = steps.getSelectedIndex();
+        String p = i >= 0 && i < stepInfo.size()
+                ? stepInfo.get(i).purpose() : "";
+        purpose.setText(p.isEmpty() ? " "
+                : "<html>" + p.replace("<", "&lt;") + "</html>");
     }
 
     // ---- helpers ------------------------------------------------

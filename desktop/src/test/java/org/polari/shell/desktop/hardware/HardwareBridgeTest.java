@@ -202,4 +202,57 @@ class HardwareBridgeTest {
         assertTrue(body.contains("name=\"polariId\"\r\n\r\nwuV1"));
         assertTrue(body.contains("{\"led_on\": false}"));
     }
+
+    private static String state(String name, String label, String p) {
+        return "{\"stateName\":\"" + name + "\","
+                + "\"boundObjectFieldValues\":{\"displayName\":\""
+                + label + "\",\"purpose\":\"" + p + "\"}}";
+    }
+
+    @Test
+    void stepsFromSolutionRowInOrderWithPurposes() {
+        String def = "{\"stateInstances\":["
+                + state("open-bundle", "1. Open the demo bundle", "Opens it.")
+                + "," + state("gate", "2. Check the firmware", "Compares.")
+                + "," + state("detect-board", "3. Find the board", "Looks.")
+                + "," + state("flash", "4. Flash the firmware", "Writes.")
+                + "," + state("host-bridge", "5. Run the bridge", "Starts.")
+                + "," + state("sync-state", "6. Keep the light in step", "Syncs.")
+                + "]}";
+        JsonObject root = new JsonObject();
+        root.addProperty("schema", "polari-app-definition/1");
+        com.google.gson.JsonArray sols = new com.google.gson.JsonArray();
+        JsonObject other = new JsonObject();
+        other.addProperty("name", "uno-light");
+        sols.add(other);
+        JsonObject row = new JsonObject();
+        row.addProperty("name", "uno-light-app");
+        row.addProperty("category", "hardware-app");
+        row.addProperty("definition", def); // served as a JSON string
+        sols.add(row);
+        root.add("solutions", sols);
+        List<Bundle.Step> st = Bundle.stepsFrom(root);
+        assertEquals(List.of("Open the demo bundle",
+                "Check the firmware", "Find the board",
+                "Flash the firmware", "Run the bridge",
+                "Keep the light in step"),
+                st.stream().map(Bundle.Step::name).toList());
+        assertEquals("Opens it.", st.get(0).purpose());
+        assertEquals("Syncs.", st.get(5).purpose());
+        // definition served as an object works too
+        row.add("definition", JsonParser.parseString(def));
+        assertEquals(6, Bundle.stepsFrom(root).size());
+    }
+
+    @Test
+    void absentRowFallsBackToTopLevelThenBuiltIn() {
+        JsonObject noRow = JsonParser.parseString(
+                "{\"solutions\":[{\"name\":\"x\"}]}").getAsJsonObject();
+        assertEquals(Bundle.DEFAULT_STEPS, Bundle.stepNamesFrom(noRow));
+        JsonObject emptyStates = JsonParser.parseString("{\"solutions\":"
+                + "[{\"name\":\"uno-light-app\",\"definition\":\"{}\"}]}")
+                .getAsJsonObject();
+        assertEquals(Bundle.DEFAULT_STEPS,
+                Bundle.stepNamesFrom(emptyStates));
+    }
 }

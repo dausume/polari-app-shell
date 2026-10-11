@@ -103,34 +103,120 @@ public final class Bundle {
         return "";
     }
 
-    /** The app's step names, from app-definition.json when it lists
-     *  exactly the panel's six states (strings, or objects with a
-     *  title/label/name/id); else the built-in list. */
+    /** One step as the app definition names it. */
+    public record Step(String name, String purpose) {}
+
+    /** The app's steps, in order: solutions[name == uno-light-app]
+     *  (a SolutionDefinition row: its definition's stateInstances,
+     *  each with boundObjectFieldValues.displayName/purpose), else a
+     *  top-level states/steps list, else the built-in six. */
+    public List<Step> steps() {
+        return stepsFrom(readObject(dir.resolve("app-definition.json")));
+    }
+
     public List<String> stepNames() {
-        JsonObject def = readObject(dir.resolve("app-definition.json"));
-        return stepNamesFrom(def);
+        return steps().stream().map(Step::name).toList();
     }
 
     static List<String> stepNamesFrom(JsonObject def) {
-        for (String key : new String[] {"states", "steps"}) {
-            if (def != null && def.has(key)
-                    && def.get(key).isJsonArray()) {
-                JsonArray a = def.getAsJsonArray(key);
-                List<String> names = new ArrayList<>();
-                for (JsonElement e : a) {
-                    String n = nameOf(e);
-                    if (n.isEmpty()) {
-                        names.clear();
-                        break;
+        return stepsFrom(def).stream().map(Step::name).toList();
+    }
+
+    static List<Step> stepsFrom(JsonObject def) {
+        List<Step> r = def == null ? List.of() : fromSolutions(def);
+        if (r.isEmpty() && def != null) {
+            r = fromStateList(def);
+        }
+        if (r.isEmpty()) {
+            r = DEFAULT_STEPS.stream()
+                    .map(n -> new Step(n, "")).toList();
+        }
+        return r;
+    }
+
+    private static List<Step> fromSolutions(JsonObject def) {
+        if (!def.has("solutions") || !def.get("solutions").isJsonArray()) {
+            return List.of();
+        }
+        for (JsonElement e : def.getAsJsonArray("solutions")) {
+            if (!e.isJsonObject()
+                    || !"uno-light-app".equals(str(e.getAsJsonObject(),
+                            "name"))) {
+                continue;
+            }
+            JsonObject row = e.getAsJsonObject();
+            JsonObject d = row;
+            if (row.has("definition")) {
+                JsonElement x = row.get("definition");
+                try {
+                    if (x.isJsonPrimitive()) {
+                        x = JsonParser.parseString(x.getAsString());
                     }
-                    names.add(n);
+                    if (x.isJsonObject()) {
+                        d = x.getAsJsonObject();
+                    }
+                } catch (Exception ex) {
+                    d = row;
                 }
-                if (names.size() == DEFAULT_STEPS.size()) {
-                    return names;
+            }
+            for (String k : new String[] {"stateInstances", "states"}) {
+                if (d.has(k) && d.get(k).isJsonArray()) {
+                    List<Step> r = stepList(d.getAsJsonArray(k));
+                    if (!r.isEmpty()) {
+                        return r;
+                    }
                 }
             }
         }
-        return DEFAULT_STEPS;
+        return List.of();
+    }
+
+    private static List<Step> fromStateList(JsonObject def) {
+        for (String key : new String[] {"states", "steps"}) {
+            if (def.has(key) && def.get(key).isJsonArray()) {
+                List<Step> r = stepList(def.getAsJsonArray(key));
+                if (r.size() == DEFAULT_STEPS.size()) {
+                    return r;
+                }
+            }
+        }
+        return List.of();
+    }
+
+    private static List<Step> stepList(JsonArray a) {
+        List<Step> names = new ArrayList<>();
+        for (JsonElement e : a) {
+            String n = nameOf(e);
+            if (n.isEmpty()) {
+                return List.of();
+            }
+            names.add(new Step(n, purposeOf(e)));
+        }
+        return names;
+    }
+
+    private static String str(JsonObject o, String k) {
+        return o.has(k) && o.get(k).isJsonPrimitive()
+                ? o.get(k).getAsString() : "";
+    }
+
+    private static JsonObject fields(JsonElement e) {
+        if (e.isJsonObject() && e.getAsJsonObject()
+                .has("boundObjectFieldValues")
+                && e.getAsJsonObject().get("boundObjectFieldValues")
+                        .isJsonObject()) {
+            return e.getAsJsonObject()
+                    .getAsJsonObject("boundObjectFieldValues");
+        }
+        return new JsonObject();
+    }
+
+    private static String purposeOf(JsonElement e) {
+        if (!e.isJsonObject()) {
+            return "";
+        }
+        String p = str(fields(e), "purpose");
+        return p.isEmpty() ? str(e.getAsJsonObject(), "purpose") : p;
     }
 
     private static String nameOf(JsonElement e) {
@@ -138,12 +224,15 @@ public final class Bundle {
             return e.getAsString();
         }
         if (e.isJsonObject()) {
-            for (String k : new String[] {"title", "label", "name",
-                    "id"}) {
-                JsonElement v = e.getAsJsonObject().get(k);
-                if (v != null && v.isJsonPrimitive()
-                        && !v.getAsString().isBlank()) {
-                    return v.getAsString();
+            JsonObject o = e.getAsJsonObject();
+            String d = str(fields(e), "displayName");
+            if (!d.isBlank()) {
+                return d.replaceFirst("^\\d+\\.\\s*", "");
+            }
+            for (String k : new String[] {"displayName", "title",
+                    "label", "name", "stateName", "id"}) {
+                if (!str(o, k).isBlank()) {
+                    return str(o, k).replaceFirst("^\\d+\\.\\s*", "");
                 }
             }
         }
