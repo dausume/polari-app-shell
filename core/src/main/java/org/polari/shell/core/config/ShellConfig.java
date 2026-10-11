@@ -24,6 +24,16 @@ public class ShellConfig {
         public String startRoute = "";
         public String brandColor = "";
         public String icon = "";
+        // ucd-app: a Hardware Bridge App's manifest app.kind /
+        // app.realization; "hardware-app" + "bridge" makes the shell
+        // open its native Hardware Bridge panel.
+        public String kind = "";
+        public String realization = "";
+
+        public boolean isHardwareBridge() {
+            return "hardware-app".equals(kind)
+                    && "bridge".equals(realization);
+        }
         // sep-2: references to edge-behavior rows (sep-5); the
         // native halves gate on these declarations.
         public List<String> capabilities = new ArrayList<>();

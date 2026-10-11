@@ -29,6 +29,10 @@ import org.polari.shell.core.tls.InstanceTrust;
  * Args: [--config <path>] [--deeplink <polari://...>]
  *       [--pipeline-setup <first-step-id>]
  *
+ * <p>ucd-app: a config whose app block says kind=hardware-app,
+ * realization=bridge opens the native Hardware Bridge panel
+ * (org.polari.shell.desktop.hardware) instead of the browser.
+ *
  * <p>ci-11b: `--pipeline-setup` opens the native first-run panel
  * instead of the browser. The LAUNCHER script decides when (no
  * device.env yet / nothing answers) and names the first step, so no
@@ -143,6 +147,18 @@ public final class DesktopMain {
                                             .pipeline
                                             .SwingSecretPrompt(null)),
                             firstStep.get(), openShell));
+            return;
+        }
+        if (appBlock[0].isHardwareBridge()) {
+            // ucd-app: the Hardware Bridge App's native panel is the
+            // main window; the browser stays behind its button.
+            String api = inst.config.apiUrl.isBlank()
+                    ? inst.config.webUrl : inst.config.apiUrl;
+            String title = appBlock[0].title;
+            SwingUtilities.invokeLater(() ->
+                    new org.polari.shell.desktop.hardware
+                            .HardwareBridgeWindow(title)
+                            .open(api, trust, openShell));
             return;
         }
         SwingUtilities.invokeLater(openShell);
