@@ -255,4 +255,25 @@ class HardwareBridgeTest {
         assertEquals(Bundle.DEFAULT_STEPS,
                 Bundle.stepNamesFrom(emptyStates));
     }
+
+    @org.junit.jupiter.api.Test
+    void detectorMatchesModelledVariantsAndSaysWhenUnverified() {
+        com.google.gson.JsonObject doc = com.google.gson.JsonParser.parseString(
+                "{\"interfaces\": [{\"name\": \"atmega16u2-bridge\", \"title\": \"ATmega16U2 bridge\","
+                + " \"ids\": [\"2341:0043\"], \"verification\": \"verified\"},"
+                + " {\"name\": \"ch340-bridge\", \"title\": \"CH340 bridge\", \"ids\": [\"1A86:7523\"],"
+                + " \"verification\": \"unverified\"}]}").getAsJsonObject();
+        java.util.List<BoardDetector.UsbInterface> known = Bundle.usbInterfacesFrom(doc);
+        java.util.List<BoardDetector.Port> clone = java.util.List.of(new BoardDetector.Port("/dev/ttyUSB0", "1a86", "7523"));
+        org.junit.jupiter.api.Assertions.assertEquals(1, BoardDetector.unos(clone, known).size());
+        String s = BoardDetector.describe(clone, known);
+        org.junit.jupiter.api.Assertions.assertTrue(s.contains("CH340 bridge") && s.contains("UNVERIFIED"), s);
+        // the built-in default still refuses the clone (unchanged behaviour without a bundle)
+        org.junit.jupiter.api.Assertions.assertTrue(BoardDetector.unos(clone).isEmpty());
+        // an ESP32 dev board's CP2102 is refused by name under the modelled list too
+        java.util.List<BoardDetector.Port> esp = java.util.List.of(new BoardDetector.Port("/dev/ttyUSB1", "10c4", "ea60"));
+        org.junit.jupiter.api.Assertions.assertTrue(BoardDetector.describe(esp, known).startsWith("Refused"));
+        // an old bundle with no usb-interfaces.json falls back to the default
+        org.junit.jupiter.api.Assertions.assertEquals(BoardDetector.DEFAULT_INTERFACES, Bundle.usbInterfacesFrom(null));
+    }
 }

@@ -103,6 +103,35 @@ public final class Bundle {
         return "";
     }
 
+    /** The USB-interface variants Polari models (usb-interfaces.json: {"interfaces": [{name, title, ids[], verification}]}),
+     *  or the built-in default when the bundle carries none (an older bundle). */
+    public List<BoardDetector.UsbInterface> usbInterfaces() {
+        return usbInterfacesFrom(readObject(dir.resolve("usb-interfaces.json")));
+    }
+
+    static List<BoardDetector.UsbInterface> usbInterfacesFrom(JsonObject doc) {
+        List<BoardDetector.UsbInterface> r = new ArrayList<>();
+        if (doc != null && doc.has("interfaces") && doc.get("interfaces").isJsonArray()) {
+            for (JsonElement e : doc.getAsJsonArray("interfaces")) {
+                if (!e.isJsonObject()) {
+                    continue;
+                }
+                JsonObject o = e.getAsJsonObject();
+                java.util.Set<String> ids = new java.util.LinkedHashSet<>();
+                if (o.has("ids") && o.get("ids").isJsonArray()) {
+                    for (JsonElement id : o.getAsJsonArray("ids")) {
+                        ids.add(id.getAsString().toLowerCase(java.util.Locale.ROOT));
+                    }
+                }
+                if (!ids.isEmpty()) {
+                    r.add(new BoardDetector.UsbInterface(str(o, "name"), str(o, "title"), java.util.Set.copyOf(ids),
+                            str(o, "verification")));
+                }
+            }
+        }
+        return r.isEmpty() ? BoardDetector.DEFAULT_INTERFACES : r;
+    }
+
     /** One step as the app definition names it. */
     public record Step(String name, String purpose) {}
 

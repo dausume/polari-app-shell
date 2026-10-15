@@ -205,8 +205,11 @@ public final class HardwareBridgePanel extends JPanel {
 
     private void detect() {
         List<BoardDetector.Port> ports = BoardDetector.scan();
-        String sentence = BoardDetector.describe(ports);
-        List<BoardDetector.Port> unos = BoardDetector.unos(ports);
+        // the USB-interface variants come from the model (the bundle's usb-interfaces.json); before a bundle is open,
+        // the built-in default (the genuine R3's 16U2 bridge)
+        List<BoardDetector.UsbInterface> known = bundle != null ? bundle.usbInterfaces() : BoardDetector.DEFAULT_INTERFACES;
+        String sentence = BoardDetector.describe(ports, known);
+        List<BoardDetector.Port> unos = BoardDetector.unos(ports, known);
         board = unos.isEmpty() ? null : unos.get(0);
         detectOut.setText(sentence);
         say(sentence);

@@ -20,6 +20,28 @@ public final class BoardDetector {
     public static final Set<String> UNO_IDS = Set.of(
             "2341:0043", "2341:0001", "2a03:0043");
 
+    /** One USB-serial interface variant as Polari models it (the bundle's usb-interfaces.json, from the
+     *  UsbInterfaceDefinition rows): its name, a plain title, the USB ids it answers to, and whether those ids are
+     *  verified against a document. The built-in default is the genuine UNO R3's ATmega16U2 bridge only. */
+    public record UsbInterface(String name, String title, Set<String> ids, String verification) {
+        public boolean verified() {
+            return "verified".equals(verification);
+        }
+    }
+
+    public static final List<UsbInterface> DEFAULT_INTERFACES = List.of(
+            new UsbInterface("atmega16u2-bridge", "ATmega16U2 USB-serial bridge (the genuine UNO R3)", UNO_IDS, "verified"));
+
+    /** The interface a port's USB id belongs to, or null. */
+    public static UsbInterface interfaceOf(Port p, List<UsbInterface> known) {
+        for (UsbInterface i : known) {
+            if (i.ids().contains(p.vidPid())) {
+                return i;
+            }
+        }
+        return null;
+    }
+
     /** One serial port as sysfs describes it. */
     public record Port(String device, String vid, String pid) {
         public String vidPid() {
@@ -32,22 +54,36 @@ public final class BoardDetector {
 
     private BoardDetector() {}
 
-    /** The UNOs among the ports, in the order given. */
+    /** The UNOs among the ports, in the order given (the built-in interface list). */
     public static List<Port> unos(List<Port> ports) {
+        return unos(ports, DEFAULT_INTERFACES);
+    }
+
+    /** The UNOs among the ports, matched against the interface variants Polari models. */
+    public static List<Port> unos(List<Port> ports, List<UsbInterface> known) {
         List<Port> r = new ArrayList<>();
         for (Port p : ports) {
-            if (p.isUno()) {
+            if (interfaceOf(p, known) != null) {
                 r.add(p);
             }
         }
         return r;
     }
 
-    /** The sentence for the screen. */
+    /** The sentence for the screen (the built-in interface list). */
     public static String describe(List<Port> ports) {
-        List<Port> unos = unos(ports);
+        return describe(ports, DEFAULT_INTERFACES);
+    }
+
+    /** The sentence for the screen: which board, through WHICH USB interface, and whether that variant is verified. */
+    public static String describe(List<Port> ports, List<UsbInterface> known) {
+        List<Port> unos = unos(ports, known);
         if (!unos.isEmpty()) {
+            UsbInterface via = interfaceOf(unos.get(0), known);
             return "Found an Arduino UNO on " + unos.get(0).device()
+                    + " through the " + via.title() + " (USB id " + unos.get(0).vidPid() + ")"
+                    + (via.verified() ? "" : " - an UNVERIFIED variant: its USB id and reset wiring are not confirmed "
+                    + "by a document; confirm the board before flashing")
                     + (unos.size() > 1 ? " (" + unos.size()
                     + " found - using the first)" : "") + ".";
         }
@@ -62,8 +98,11 @@ public final class BoardDetector {
             sb.append(i == 0 ? "" : ", ").append(ports.get(i).device())
                     .append(" ").append(ports.get(i).vidPid());
         }
-        return sb.append("). Expected USB id 2341:0043, 2341:0001 or "
-                + "2a03:0043.").toString();
+        List<String> expected = new ArrayList<>();
+        for (UsbInterface i : known) {
+            expected.addAll(i.ids().stream().sorted().toList());
+        }
+        return sb.append("). Expected USB id ").append(String.join(", ", expected)).append(".").toString();
     }
 
     public static List<Port> scan() {
