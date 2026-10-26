@@ -38,8 +38,11 @@ final class CefBrowserHost {
         Path share = Paths.get(
                 System.getProperty("user.home"),
                 ".local", "share", "polari-shell");
-        builder.setInstallDir(
-                share.resolve("jcef-natives").toFile());
+        CefNativeRuntime.Selection natives = CefNativeRuntime.select(share);
+        builder.setInstallDir(natives.directory().toFile());
+        // Packaged natives are shared and read-only. Skipping installation
+        // also prevents jcefmaven from attempting a first-launch download.
+        builder.setSkipInstallation(natives.bundled());
         builder.getCefSettings().cache_path = share
                 .resolve("profiles").resolve(inst.id).toString();
         // Strategy A depends on the SPA's silent-renew iframe seeing

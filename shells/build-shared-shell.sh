@@ -7,13 +7,16 @@
 # passes `--config` — so N apps cost ONE runtime on disk, not N.
 #
 #   shells/build-shared-shell.sh [--version 0.1.0] [--output dist]
+#                                [--jcef-natives <matching native engine dir>]
 #
 # Isolated shell (no host pollution): all work under build/.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VERSION=0.1.0
 OUTPUT="$ROOT/dist"
+NATIVES=""
 while [ $# -gt 0 ]; do case "$1" in
+    --jcef-natives) NATIVES="$2"; shift 2 ;;
     --version) VERSION="$2"; shift 2 ;;
     --output) OUTPUT="$2"; shift 2 ;;
     -h|--help) sed -n '2,12p' "$0"; exit 0 ;;
@@ -52,6 +55,24 @@ echo "==> 3/4 lay out the .deb tree ($APPDIR + PATH launcher)"
 DEBROOT="$STAGE/deb"
 mkdir -p "$DEBROOT$APPDIR" "$DEBROOT/usr/bin" "$DEBROOT/DEBIAN"
 cp -a "$IMG/polari-shell/." "$DEBROOT$APPDIR/"
+if [ -n "$NATIVES" ]; then
+    python3 - "$NATIVES" "$DIST/lib" <<'PYNATIVES'
+import json,pathlib,sys,zipfile
+natives,lib=map(pathlib.Path,sys.argv[1:])
+for name in ('libcef.so','libjcef.so','jcef_helper','icudtl.dat','resources.pak','build_meta.json'):
+    if not (natives/name).is_file():raise SystemExit('missing JCEF native file: '+name)
+api=next(lib.glob('jcef-api-*.jar'))
+with zipfile.ZipFile(api) as jar: expected=json.loads(jar.read('build_meta.json'))
+actual=json.loads((natives/'build_meta.json').read_text())
+if actual.get('release_tag')!=expected['release_tag'] or actual.get('platform')!='linux-amd64':
+    raise SystemExit('JCEF natives do not match the packaged browser API release/architecture')
+PYNATIVES
+    mkdir -p "$DEBROOT$APPDIR/lib/jcef-natives"
+    cp -a "$NATIVES/." "$DEBROOT$APPDIR/lib/jcef-natives/"
+    # No per-user browser caches or profiles are ever packaged here.
+    chmod -R a+rX "$DEBROOT$APPDIR/lib/jcef-natives"
+fi
+
 # a stable launcher name every per-app .deb calls
 cat > "$DEBROOT/usr/bin/polari-app-shell" <<EOF
 #!/bin/sh
@@ -77,6 +98,6 @@ EOF
 
 echo "==> 4/4 dpkg-deb build"
 DEB="$OUTPUT/${PKG}_${VERSION}_amd64.deb"
-dpkg-deb --build --root-owner-group "$DEBROOT" "$DEB" >/dev/null
+dpkg-deb --build --root-owner-group --threads-max=1 "$DEBROOT" "$DEB" >/dev/null
 echo "built: $DEB ($(du -h "$DEB" | cut -f1), runtime ${INSTALLED_KB}KB on disk once)"
 echo "install: sudo dpkg -i $DEB   (then per-app launchers via build-launcher-deb.sh)"
