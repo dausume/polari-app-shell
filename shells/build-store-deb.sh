@@ -110,6 +110,12 @@ Icon=$STORE_ICON
 Terminal=false
 Categories=Network;System;
 StartupWMClass=$PKG
+Actions=Remove;
+
+[Desktop Action Remove]
+Name=Remove Isle from this device
+Exec=$SHARE/store-launch.sh --remove
+Icon=edit-delete
 EOF
 
 # ---- postinst: trust seed ONLY. The agent tier is an EXPLICIT

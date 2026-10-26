@@ -51,6 +51,16 @@ term_run() {  # CMD-STRING — run in a visible terminal, wait
     return 1
 }
 
+# Removal must remain available when the backend or router has already been
+# removed. The desktop action opens the SAME interactive uninstall engine.
+if [ "${1:-}" = "--remove" ]; then
+    REMOVE_CLI=$(command -v isle 2>/dev/null || true)
+    [ -n "$REMOVE_CLI" ] || REMOVE_CLI=/usr/local/bin/isle
+    [ -x "$REMOVE_CLI" ] || exit 1
+    term_run "pkexec '$REMOVE_CLI' uninstall --everything; result=\$?; echo; echo \"Uninstall exited with status \$result\"; read -r -p 'Press Enter to close…'"
+    exit $?
+fi
+
 # ── the ISLE-ENDED prompt (unin-7) ──────────────────────────────────
 # isle-watch records when this device's CORE was deleted (kill signal)
 # or has been unreachable for a long time. Removal is NEVER automatic:
